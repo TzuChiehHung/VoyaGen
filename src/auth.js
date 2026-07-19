@@ -177,31 +177,32 @@ function isLoggedIn() {
     return !!getAccessToken();
 }
 
+// 處理頂欄使用者圓形圖示點擊事件
+function handleUserButtonClick() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
 // 更新頁面上的登入狀態與 UI
 function updateAuthUI() {
     const loggedIn = isLoggedIn();
     const profile = getUserProfile();
-    const navUserLabel = document.getElementById('nav-user-label');
     const navUserIcon = document.getElementById('nav-user-icon');
     const dropdownName = document.getElementById('user-dropdown-name');
     const dropdownEmail = document.getElementById('user-dropdown-email');
+    const dropdownLoginBtn = document.getElementById('dropdown-login-btn');
+    const dropdownLogoutBtn = document.getElementById('dropdown-logout-btn');
     const clientIdInput = document.getElementById('client-id-input');
     const apiKeyInput = document.getElementById('api-key-input');
 
     if (clientIdInput) clientIdInput.value = GOOGLE_CLIENT_ID;
     if (apiKeyInput) apiKeyInput.value = GOOGLE_API_KEY;
 
-    if (navUserLabel) {
-        if (loggedIn) {
-            navUserLabel.innerText = profile?.name || '已登入';
-        } else {
-            navUserLabel.innerText = '登入';
-        }
-    }
-
     if (navUserIcon) {
         if (loggedIn && profile?.picture) {
-            navUserIcon.innerHTML = `<img src="${profile.picture}" class="w-5 h-5 rounded-full object-cover shadow-sm">`;
+            navUserIcon.innerHTML = `<img src="${profile.picture}" class="w-6 h-6 rounded-full object-cover shadow-sm">`;
         } else if (loggedIn) {
             navUserIcon.innerHTML = `<i class="fa-solid fa-user-check text-emerald-600"></i>`;
         } else {
@@ -210,8 +211,20 @@ function updateAuthUI() {
         }
     }
 
-    if (dropdownName) dropdownName.innerText = profile?.name || 'Google 使用者';
-    if (dropdownEmail) dropdownEmail.innerText = profile?.email || '已授權連結 Google 帳號';
+    if (dropdownName) dropdownName.innerText = loggedIn ? (profile?.name || 'Google 使用者') : '未登入帳號';
+    if (dropdownEmail) dropdownEmail.innerText = loggedIn ? (profile?.email || '已連結 Google 帳號') : '點擊下方登入授權 Google Drive';
+
+    if (dropdownLoginBtn && dropdownLogoutBtn) {
+        if (loggedIn) {
+            dropdownLoginBtn.classList.add('hidden');
+            dropdownLogoutBtn.classList.remove('hidden');
+            dropdownLogoutBtn.classList.add('flex');
+        } else {
+            dropdownLoginBtn.classList.remove('hidden');
+            dropdownLoginBtn.classList.add('flex');
+            dropdownLogoutBtn.classList.add('hidden');
+        }
+    }
 
     // 登入頁按鈕與面板切換
     const loginCardNotAuth = document.getElementById('login-card-not-auth');
