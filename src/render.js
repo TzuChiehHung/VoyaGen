@@ -151,17 +151,95 @@ function toggleTransfers() {
 }
 window.toggleTransfers = toggleTransfers;
 
+let currentLoadedUrl = null;
+
 // 從 URL 載入資料並初始化網頁
-async function init() {
+async function init(forceReload = false) {
     const rawDataUrl = getQueryParam('data') || 'templates/itinerary.json';
     const dataUrl = (typeof normalizeDataUrl === 'function') ? normalizeDataUrl(rawDataUrl) : rawDataUrl;
     const dayContentArea = document.getElementById('day-content-area');
+
+    if (!forceReload && currentLoadedUrl === dataUrl && itineraryData) {
+        return; // 若已載入相同資料則跳過
+    }
     
     try {
-        const response = await fetch(dataUrl);
-        if (!response.ok) throw new Error(`HTTP 錯誤: ${response.status}`);
-        
-        itineraryData = await response.json();
+        let headers = {};
+        let finalUrl = dataUrl;
+
+        // 提取 Google Drive File ID (包含 lh3, uc?export=, file/d/)
+        const gDriveIdMatch = dataUrl.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/) ||
+                              dataUrl.match(/drive\.google\.com\/uc\?export=download&id=([^&]+)/) ||
+                              dataUrl.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+
+        const fileId = gDriveIdMatch ? gDriveIdMatch[1] : null;
+        const token = (typeof voyaAuth !== 'undefined') ? voyaAuth.getAccessToken() : null;
+        const apiKey = (typeof voyaAuth !== 'undefined') ? voyaAuth.getApiKey() : null;
+
+        // 若已登入且為 Google Drive 檔案，優先使用 Drive API + Bearer Token
+        if (fileId && token) {
+            finalUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+            headers['Authorization'] = `Bearer ${token}`;
+        } else if (fileId && apiKey) {
+            // 未登入但有設定 API Key，使用 Google 官方 Drive API (秒讀且原生開放 CORS)
+            finalUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
+        }
+
+        let response;
+        try {
+            response = await fetch(finalUrl, { headers });
+            if (!response.ok) throw new Error(`HTTP 錯誤: ${response.status}`);
+            itineraryData = await response.json();
+        } catch (fetchErr) {
+            // 未登入/跨域阻檔時，嘗試多重 CORS 代理通道
+            if (fileId) {
+                console.warn('直連受限，啟動多軌 CORS 代理備援通道...');
+                const targetUrl = `https://drive.google.com/uc?export=download&confirm=no_antivirus&id=${fileId}`;
+                let fetchedJson = null;
+
+                // 嘗試 1: AllOrigins JSON 包裹模式
+                try {
+                    const res1 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+                    if (res1.ok) {
+                        const data1 = await res1.json();
+                        if (data1 && data1.contents) {
+                            fetchedJson = (typeof data1.contents === 'string') ? JSON.parse(data1.contents) : data1.contents;
+                        }
+                    }
+                } catch (e1) {
+                    console.warn('AllOrigins 代理通道失敗:', e1);
+                }
+
+                // 嘗試 2: Corsproxy.io 模式
+                if (!fetchedJson) {
+                    try {
+                        const res2 = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`);
+                        if (res2.ok) fetchedJson = await res2.json();
+                    } catch (e2) {
+                        console.warn('Corsproxy 代理通道失敗:', e2);
+                    }
+                }
+
+                // 嘗試 3: Thingproxy 模式
+                if (!fetchedJson) {
+                    try {
+                        const res3 = await fetch(`https://thingproxy.freeboard.io/fetch/${targetUrl}`);
+                        if (res3.ok) fetchedJson = await res3.json();
+                    } catch (e3) {
+                        console.warn('Thingproxy 代理通道失敗:', e3);
+                    }
+                }
+
+                if (fetchedJson) {
+                    itineraryData = fetchedJson;
+                } else {
+                    throw fetchErr;
+                }
+            } else {
+                throw fetchErr;
+            }
+        }
+        currentLoadedUrl = dataUrl;
         
         // 1. 初始化 Meta 與主題
         document.title = itineraryData.meta.title;
@@ -240,3 +318,4 @@ async function init() {
 
 // 頁面加載完成後執行
 document.addEventListener('DOMContentLoaded', init);
+window.initItineraryView = init;

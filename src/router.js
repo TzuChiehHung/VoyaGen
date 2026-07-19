@@ -31,6 +31,16 @@ function navigateTo(routeName) {
         }
     });
 
+    // 若切換至 dashboard，觸發 Dashboard 讀取
+    if (targetRoute === 'dashboard' && typeof window.voyaDrive !== 'undefined' && typeof window.voyaDrive.renderDashboard === 'function') {
+        window.voyaDrive.renderDashboard();
+    }
+
+    // 若切換至 viewer，觸發 行程載入
+    if (targetRoute === 'viewer' && typeof window.initItineraryView === 'function') {
+        window.initItineraryView();
+    }
+
     // 更新導覽列 Active 狀態
     document.querySelectorAll('.nav-link').forEach(link => {
         const linkRoute = link.getAttribute('data-route');

@@ -209,6 +209,20 @@ details summary::-webkit-details-marker { display: none; }
 .text-highlight-emerald { color: #059669; font-weight: 700; }
 .text-highlight-black { color: #1e293b; font-weight: 700; }
 
+/* VoyaGen 品牌 Logo 恆定專用樣式 (不受行程動態主題覆蓋) */
+.brand-logo-text {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #8b5cf6 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+}
+
+.brand-logo-icon {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35) !important;
+}
+
 /* 標題與里程碑文字動態配色適配 */
 .text-indigo-900 {
     color: var(--color-primary-mid) !important;

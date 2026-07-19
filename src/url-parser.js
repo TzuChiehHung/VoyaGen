@@ -1,29 +1,24 @@
 /**
  * URL 解析與轉換工具
- * 負責將 Google Drive 分享連結、GitHub Blob 連結等轉換為可直接下載/請求的 Raw JSON URL
+ * 負責將 Google Drive 分享連結、GitHub Blob 連結等轉換為標準 Raw JSON URL
  */
 
-export function normalizeDataUrl(url) {
+function normalizeDataUrl(url) {
     if (!url || typeof url !== 'string') return url;
     
     const trimmedUrl = url.trim();
 
-    // 1. Google Drive /file/d/{FILE_ID}/view 網址轉換
-    // 範例: https://drive.google.com/file/d/1A2B3C4D5E/view?usp=sharing
-    const gDriveFileMatch = trimmedUrl.match(/drive\.google\.com\/file\/d\/([^\/?#]+)/);
-    if (gDriveFileMatch && gDriveFileMatch[1]) {
-        return `https://drive.google.com/uc?export=download&id=${gDriveFileMatch[1]}`;
+    // 1. Google Drive 網址轉換 (file/d/, uc?export=download&id=, open?id=, lh3)
+    const gDriveMatch = trimmedUrl.match(/drive\.google\.com\/file\/d\/([^\/?#]+)/) ||
+                        trimmedUrl.match(/drive\.google\.com\/uc\?export=download&id=([^&#]+)/) ||
+                        trimmedUrl.match(/drive\.google\.com\/open\?id=([^&#]+)/) ||
+                        trimmedUrl.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/);
+
+    if (gDriveMatch && gDriveMatch[1]) {
+        return `https://drive.google.com/uc?export=download&id=${gDriveMatch[1]}`;
     }
 
-    // 2. Google Drive open?id={FILE_ID} 網址轉換
-    // 範例: https://drive.google.com/open?id=1A2B3C4D5E
-    const gDriveOpenMatch = trimmedUrl.match(/drive\.google\.com\/open\?id=([^&#]+)/);
-    if (gDriveOpenMatch && gDriveOpenMatch[1]) {
-        return `https://drive.google.com/uc?export=download&id=${gDriveOpenMatch[1]}`;
-    }
-
-    // 3. GitHub Blob 網址轉換
-    // 範例: https://github.com/user/repo/blob/main/templates/itinerary.json
+    // 2. GitHub Blob 網址轉換
     const githubBlobMatch = trimmedUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)/);
     if (githubBlobMatch) {
         const [, user, repo, branch, filePath] = githubBlobMatch;
@@ -33,7 +28,10 @@ export function normalizeDataUrl(url) {
     return trimmedUrl;
 }
 
-// 在瀏覽器環境下掛載至全域 window 物件
+// 支援 Node.js 單元測試與瀏覽器全域載入
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { normalizeDataUrl };
+}
 if (typeof window !== 'undefined') {
     window.normalizeDataUrl = normalizeDataUrl;
 }

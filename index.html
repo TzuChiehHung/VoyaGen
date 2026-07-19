@@ -25,11 +25,11 @@
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16">
             <!-- Brand Logo -->
-            <a href="#dashboard" onclick="navigateTo('dashboard')" class="flex items-center gap-2 font-black text-xl text-indigo-900 tracking-tight hover:opacity-90 transition-opacity">
-                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+            <a href="#dashboard" onclick="navigateTo('dashboard')" class="flex items-center gap-2.5 hover:opacity-95 transition-opacity">
+                <div class="w-9 h-9 rounded-xl brand-logo-icon flex items-center justify-center text-white">
                     <i class="fa-solid fa-paper-plane text-sm"></i>
                 </div>
-                <span>VoyaGen</span>
+                <span class="text-2xl brand-logo-text">VoyaGen</span>
             </a>
 
             <!-- Navigation Links -->
@@ -46,10 +46,26 @@
                     <i class="fa-solid fa-eye"></i>
                     <span class="hidden sm:inline">行程預覽</span>
                 </button>
-                <button onclick="voyaAuth.isLoggedIn() ? voyaAuth.logout() : voyaAuth.login()" data-route="login" class="nav-link px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all flex items-center gap-2 ml-2 border border-slate-200">
-                    <i class="fa-brands fa-google text-rose-500"></i>
-                    <span id="nav-user-label">登入</span>
-                </button>
+                <div class="relative">
+                    <button id="user-menu-btn" onclick="voyaAuth.handleUserButtonClick()" class="px-3.5 py-1.5 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 font-semibold transition-all flex items-center gap-2 ml-2 border border-slate-200 shadow-sm text-sm">
+                        <span id="nav-user-icon" class="flex items-center justify-center">
+                            <svg class="w-4 h-4 inline-block" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        </span>
+                        <span id="nav-user-label" class="truncate max-w-[100px]">登入</span>
+                    </button>
+
+                    <!-- 使用者個人資料與登出下拉選單 -->
+                    <div id="user-dropdown" class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 hidden z-50 animate-fade-in">
+                        <div class="px-3 py-2.5 border-b border-slate-100 mb-1">
+                            <div id="user-dropdown-name" class="font-bold text-slate-800 text-sm truncate">使用者</div>
+                            <div id="user-dropdown-email" class="text-xs text-slate-400 truncate mt-0.5">--</div>
+                        </div>
+                        <button onclick="voyaAuth.logout()" class="w-full text-left px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>登出帳號</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -64,9 +80,15 @@
                     <h2 class="text-2xl font-black text-slate-900 tracking-tight">我的行程庫</h2>
                     <p class="text-sm text-slate-500 mt-1">管理您儲存在 Google Drive 中的專屬行程 JSON</p>
                 </div>
-                <button onclick="navigateTo('generator')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 text-sm">
-                    <i class="fa-solid fa-plus"></i> 新增 AI 行程
-                </button>
+                <div class="flex items-center gap-2">
+                    <input type="file" id="json-file-input" accept=".json" multiple class="hidden" onchange="voyaDrive.uploadLocalJsonFile(this)">
+                    <button onclick="document.getElementById('json-file-input').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 text-sm border border-slate-200">
+                        <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> 上傳現有 JSON
+                    </button>
+                    <button onclick="navigateTo('generator')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus"></i> 新增 AI 行程
+                    </button>
+                </div>
             </div>
 
             <div id="dashboard-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -120,7 +142,7 @@
                     <p class="text-sm text-slate-500 mb-6">登入 Google 帳號以直接存取您的 Google Drive 專屬行程檔並使用 Gemini AI 生成功能</p>
 
                     <button onclick="voyaAuth.login()" class="w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 font-bold px-6 py-3.5 rounded-xl shadow-sm transition-all flex items-center justify-center gap-3">
-                        <i class="fa-brands fa-google text-rose-500 text-lg"></i>
+                        <svg class="w-5 h-5 inline-block" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                         <span>連結 Google 帳號授權登入</span>
                     </button>
                 </div>
@@ -135,21 +157,6 @@
                     <button onclick="voyaAuth.logout()" class="bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold px-5 py-2.5 rounded-xl transition-all text-sm">
                         登出帳號
                     </button>
-                </div>
-
-                <!-- OAuth Client ID 設定面板 -->
-                <div class="bg-slate-100/80 rounded-2xl border border-slate-200 p-5 text-left text-xs">
-                    <div class="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
-                        <i class="fa-solid fa-gear text-slate-500"></i>
-                        <span>Google OAuth Client ID 設定</span>
-                    </div>
-                    <p class="text-slate-500 mb-3">若要在本地開發或個人 GitHub Pages 上測試，請輸入您在 Google Cloud Console 申請的 OAuth Client ID：</p>
-                    <div class="flex gap-2">
-                        <input type="text" id="client-id-input" placeholder="*.apps.googleusercontent.com" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <button onclick="voyaAuth.setClientId(document.getElementById('client-id-input').value); alert('Client ID 已儲存！');" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg font-bold">
-                            儲存
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -211,9 +218,14 @@
 
     </div>
 
+    <!-- Floating Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
     <!-- Core Scripts -->
+    <script src="src/config.js"></script>
     <script src="src/url-parser.js"></script>
     <script src="src/auth.js"></script>
+    <script src="src/drive.js"></script>
     <script src="src/router.js"></script>
     <script src="src/templates.js"></script>
     <script src="src/render.js"></script>
