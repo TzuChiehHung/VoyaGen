@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Google Identity Services (GSI) SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Core CSS -->
     <link rel="stylesheet" href="assets/css/theme.css">
 </head>
@@ -44,7 +46,7 @@
                     <i class="fa-solid fa-eye"></i>
                     <span class="hidden sm:inline">行程預覽</span>
                 </button>
-                <button onclick="navigateTo('login')" data-route="login" class="nav-link px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all flex items-center gap-2 ml-2 border border-slate-200">
+                <button onclick="voyaAuth.isLoggedIn() ? voyaAuth.logout() : voyaAuth.login()" data-route="login" class="nav-link px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all flex items-center gap-2 ml-2 border border-slate-200">
                     <i class="fa-brands fa-google text-rose-500"></i>
                     <span id="nav-user-label">登入</span>
                 </button>
@@ -68,14 +70,13 @@
             </div>
 
             <div id="dashboard-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Dashboard items placeholder -->
-                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-white/50">
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-white/50 col-span-full">
                     <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-lg">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
                     <h3 class="font-bold text-slate-800 text-base mb-1">尚未連結 Google Drive 帳號</h3>
                     <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">登入 Google 帳號授權後，系統將為您建立專屬行程雲端資料夾，並列出所有行程。</p>
-                    <button onclick="navigateTo('login')" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all">
+                    <button onclick="voyaAuth.login()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all">
                         立即登入 Google 帳號
                     </button>
                 </div>
@@ -106,20 +107,51 @@
             </div>
         </div>
 
-        <!-- View 3: Login (Google 登入) -->
-        <div id="view-login" class="app-view max-w-5xl mx-auto px-4 py-16 hidden">
-            <div class="max-w-md mx-auto bg-white rounded-2xl border border-slate-100 shadow-md p-8 text-center">
-                <div class="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </div>
-                <h2 class="text-2xl font-black text-slate-900 mb-2">歡迎使用 VoyaGen</h2>
-                <p class="text-sm text-slate-500 mb-6">登入 Google 帳號以直接存取您的 Google Drive 專屬行程檔並使用 Gemini AI 生成功能</p>
-                <div id="gsi-button-container" class="flex justify-center mb-4">
-                    <button class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold px-6 py-3 rounded-xl shadow-sm transition-all flex items-center gap-3">
+        <!-- View 3: Login (Google 登入與 Client ID 設定) -->
+        <div id="view-login" class="app-view max-w-5xl mx-auto px-4 py-12 hidden">
+            <div class="max-w-md mx-auto space-y-6">
+
+                <!-- 尚未登入卡片 -->
+                <div id="login-card-not-auth" class="bg-white rounded-2xl border border-slate-100 shadow-md p-8 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-slate-900 mb-2">歡迎使用 VoyaGen</h2>
+                    <p class="text-sm text-slate-500 mb-6">登入 Google 帳號以直接存取您的 Google Drive 專屬行程檔並使用 Gemini AI 生成功能</p>
+
+                    <button onclick="voyaAuth.login()" class="w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 font-bold px-6 py-3.5 rounded-xl shadow-sm transition-all flex items-center justify-center gap-3">
                         <i class="fa-brands fa-google text-rose-500 text-lg"></i>
-                        <span>使用 Google 帳號登入 (Step 2 實作)</span>
+                        <span>連結 Google 帳號授權登入</span>
                     </button>
                 </div>
+
+                <!-- 已登入卡片 -->
+                <div id="login-card-auth" class="bg-white rounded-2xl border border-slate-100 shadow-md p-8 text-center hidden">
+                    <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900 mb-1">Google 帳號已成功連結！</h2>
+                    <p class="text-xs text-slate-500 mb-6">您現在可以存取 Google Drive 中的行程檔並使用 Gemini AI 直連生成。</p>
+                    <button onclick="voyaAuth.logout()" class="bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold px-5 py-2.5 rounded-xl transition-all text-sm">
+                        登出帳號
+                    </button>
+                </div>
+
+                <!-- OAuth Client ID 設定面板 -->
+                <div class="bg-slate-100/80 rounded-2xl border border-slate-200 p-5 text-left text-xs">
+                    <div class="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-gear text-slate-500"></i>
+                        <span>Google OAuth Client ID 設定</span>
+                    </div>
+                    <p class="text-slate-500 mb-3">若要在本地開發或個人 GitHub Pages 上測試，請輸入您在 Google Cloud Console 申請的 OAuth Client ID：</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="client-id-input" placeholder="*.apps.googleusercontent.com" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <button onclick="voyaAuth.setClientId(document.getElementById('client-id-input').value); alert('Client ID 已儲存！');" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-lg font-bold">
+                            儲存
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -181,6 +213,7 @@
 
     <!-- Core Scripts -->
     <script src="src/url-parser.js"></script>
+    <script src="src/auth.js"></script>
     <script src="src/router.js"></script>
     <script src="src/templates.js"></script>
     <script src="src/render.js"></script>

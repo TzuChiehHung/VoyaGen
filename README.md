@@ -17,16 +17,16 @@
 使用任意 HTTP Server 在專案根目錄啟動：
 
 ```bash
-# 方法一：Python
-python -m http.server 8008
+# 方法一：VS Code Live Server 擴充套件（推薦，開啟後預設為 5500）
 
-# 方法二：Node.js
-npx serve .
+# 方法二：Python
+python -m http.server 5500
 
-# 方法三：VS Code Live Server 擴充套件
+# 方法三：Node.js
+npx serve . -p 5500
 ```
 
-開啟瀏覽器至 `http://localhost:8008`，預設會載入 `templates/itinerary.json` 範本。
+開啟瀏覽器至 `http://localhost:5500`，預設會載入 `templates/itinerary.json` 範本。
 
 ### 載入指定行程
 
@@ -34,24 +34,30 @@ npx serve .
 
 ```
 # 本地測試
-http://localhost:8008/index.html?data=templates/my-trip.json
+http://localhost:5500/index.html?data=templates/itinerary.json
 
 # 指定 Google Drive 公開連結
-https://YOUR_GITHUB_ID.github.io/travel-itinerary-generator/?data=https://YOUR_GOOGLE_DRIVE_DIRECT_LINK
+https://TzuChiehHung.github.io/VoyaGen/?data=https://YOUR_GOOGLE_DRIVE_DIRECT_LINK
 ```
 
 ## 📁 專案結構
 
 ```
-travel-itinerary-generator/
-├── index.html              # 主頁面（唯一的 HTML 入口）
-├── schema.json             # JSON Schema 定義（供 IDE 驗證格式用）
+VoyaGen/
+├── index.html              # 主頁面與 SPA 視圖容器
+├── schema.json             # JSON Schema 定義（供格式驗證使用）
+├── package.json            # 專案套件與 script 配置
 ├── assets/
 │   └── css/
 │       └── theme.css       # 主題樣式（時間軸、里程碑、提示框等）
 ├── src/
+│   ├── auth.js             # Google OAuth 2.0 登入授權與 Token 管理
+│   ├── router.js           # 前端 SPA Hash 路由器 (Dashboard, Generator, Login, Viewer)
+│   ├── url-parser.js       # Google Drive / GitHub Raw 網址自動解析轉換
 │   ├── render.js           # 核心渲染邏輯（資料載入、主題套用、Timeline 渲染）
-│   └── templates.js        # HTML 片段產生器（各 type 的 HTML 模板）
+│   └── templates.js        # HTML 片段產生器
+├── tests/
+│   └── url-parser.test.js  # URL 解析單元測試
 └── templates/
     └── itinerary.json      # 📖 行程範本說明書（含完整欄位說明與範例）
 ```
@@ -86,9 +92,9 @@ travel-itinerary-generator/
 
 ## 🌐 部署至 GitHub Pages
 
-1. 將此專案推送至 GitHub Repository
+1. 將此專案推送至 GitHub Repository (`TzuChiehHung/VoyaGen`)
 2. 至 Repository 設定 → Pages → Branch 選 `main`，儲存
-3. 等待約 1 分鐘，取得網址：`https://YOUR_GITHUB_ID.github.io/travel-itinerary-generator/`
+3. 等待約 1 分鐘，取得網址：`https://TzuChiehHung.github.io/VoyaGen/`
 
 ## 📤 Google Drive 分享流程
 
@@ -98,7 +104,7 @@ travel-itinerary-generator/
 4. 組合分享網址：
 
 ```
-https://YOUR_GITHUB_ID.github.io/travel-itinerary-generator/?data=https://drive.google.com/uc?export=download&id=YOUR_FILE_ID
+https://TzuChiehHung.github.io/VoyaGen/?data=https://drive.google.com/uc?export=download&id=YOUR_FILE_ID
 ```
 
 ## 🛠 給 AI 的生成提示詞
