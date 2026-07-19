@@ -5,6 +5,81 @@
 
 let currentEditSourceData = null; // 若為微調模式，儲存被微調的原始行程 JSON
 
+// 將 JSON 字串值內的未轉義控制字元 (如換行 \n、Tab \t) 轉義或替換
+function sanitizeJsonControlChars(str) {
+    let inString = false;
+    let isEscaped = false;
+    let result = '';
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (inString) {
+            if (isEscaped) {
+                result += char;
+                isEscaped = false;
+            } else if (char === '\\') {
+                result += char;
+                isEscaped = true;
+            } else if (char === '"') {
+                result += char;
+                inString = false;
+            } else if (char === '\n') {
+                result += '\\n';
+            } else if (char === '\r') {
+                result += '\\r';
+            } else if (char === '\t') {
+                result += '\\t';
+            } else {
+                const code = char.charCodeAt(0);
+                if (code < 32) {
+                    result += ' ';
+                } else {
+                    result += char;
+                }
+            }
+        } else {
+            if (char === '"') {
+                inString = true;
+            }
+            result += char;
+        }
+    }
+    return result;
+}
+
+/**
+ * 容錯 JSON 解析函式 (自動清理 Markdown 標籤、控制字元、尾隨逗號與多餘文字)
+ */
+function cleanAndParseJson(rawText) {
+    if (!rawText) throw new Error('未取得有效內容');
+
+    // 1. 清理 Markdown Code Block 標籤
+    let text = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+    // 2. 嘗試直接解析
+    try {
+        return JSON.parse(text);
+    } catch (e1) {
+        // 3. 容錯處理：自動修復控制字元 (如未轉義換行/Tab) 與尾隨逗號
+        try {
+            const sanitized = sanitizeJsonControlChars(text)
+                .replace(/,\s*([\]}])/g, '$1')
+                .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+            return JSON.parse(sanitized);
+        } catch (e2) {
+            // 4. 擷取 JSON 物件主體 ({ ... }) 再度嘗試
+            const firstBrace = text.indexOf('{');
+            const lastBrace = text.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                const subText = sanitizeJsonControlChars(text.substring(firstBrace, lastBrace + 1))
+                    .replace(/,\s*([\]}])/g, '$1');
+                return JSON.parse(subText);
+            }
+            throw e1;
+        }
+    }
+}
+
 /**
  * 確保生成的 JSON 結構符合 ItinerarySchema 規範 (schema.json)
  */
@@ -46,7 +121,7 @@ function initGeneratorView(sourceData = null) {
         if (draftInput) draftInput.placeholder = '例如：請幫我將第二天的行程與第三天對調，並在第一天晚餐加上西面烤肉...';
     } else {
         // 全新生成模式
-        if (modeBadge) modeBadge.innerText = '全新 AI 生成';
+        if (modeBadge) modeBadge.innerText = '✦ AI 專屬規劃 ✦';
         if (modeTitle) modeTitle.innerText = '規劃您的夢幻旅程';
         if (modeDesc) modeDesc.innerText = '填寫目的地與偏好，Gemini 3.5 Flash 將秒級為您規劃完美行程。';
         if (submitBtnText) submitBtnText.innerText = '開始 AI 智慧生成';
@@ -146,8 +221,7 @@ async function generateItineraryWithAI() {
         }
 
         // 解析 JSON 並實施結構歸一化
-        const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsedJson = JSON.parse(cleanedText);
+        const parsedJson = cleanAndParseJson(rawText);
         const generatedItinerary = normalizeItinerarySchema(parsedJson);
 
         voyaDrive.showToast('✨ AI 旅遊助理規劃完成！正在儲存至 Google Drive...', 'success');

@@ -21,6 +21,161 @@ function hexToRgba(hex, alpha = 1) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// 將 HEX 色碼加深 (調暗)，用於產生奢華寶石漸層背景
+function darkenHex(hex, factor = 0.3) {
+    if (!hex || typeof hex !== 'string') return '#1e293b';
+    let cleanHex = hex.replace('#', '').trim();
+    if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(c => c + c).join('');
+    }
+    if (cleanHex.length !== 6) return '#1e293b';
+    const r = Math.max(0, Math.min(255, Math.floor(parseInt(cleanHex.substring(0, 2), 16) * factor)));
+    const g = Math.max(0, Math.min(255, Math.floor(parseInt(cleanHex.substring(2, 4), 16) * factor)));
+    const b = Math.max(0, Math.min(255, Math.floor(parseInt(cleanHex.substring(4, 6), 16) * factor)));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// 將 HEX 色碼提亮 (粉軟高光)，用於產生發光副標題
+function lightenHex(hex) {
+    if (!hex || typeof hex !== 'string') return '#7dd3fc';
+    let cleanHex = hex.replace('#', '').trim();
+    if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(c => c + c).join('');
+    }
+    if (cleanHex.length !== 6) return '#7dd3fc';
+    let r = parseInt(cleanHex.substring(0, 2), 16);
+    let g = parseInt(cleanHex.substring(2, 4), 16);
+    let b = parseInt(cleanHex.substring(4, 6), 16);
+    r = Math.min(255, Math.floor(r + (255 - r) * 0.45));
+    g = Math.min(255, Math.floor(g + (255 - g) * 0.45));
+    b = Math.min(255, Math.floor(b + (255 - b) * 0.45));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// 內建設計師等級主題調色盤資料庫 (寶石級奢華漸層)
+const DESIGNER_PALETTES = {
+    rose: {
+        primary_dark: '#0f172a',
+        primary_mid: '#881337',
+        accent_primary: '#e11d48',
+        accent_light: '#fb7185',
+        accent_bg: '#fff1f2',
+        accent_shadow: 'rgba(225, 29, 72, 0.4)',
+        timeline_border: '#fda4af',
+        btn_gradient_from: '#881337',
+        btn_gradient_to: '#e11d48',
+        btn_border: '#881337',
+        btn_shadow: 'rgba(225, 29, 72, 0.25)',
+        milestone_bg_from: '#fff1f2',
+        milestone_bg_to: '#ffe4e6',
+        milestone_border: '#fda4af',
+        milestone_shadow: 'rgba(225, 29, 72, 0.08)',
+        flight_text: '#e11d48',
+        map_hover: '#be123c',
+        subtitle_text: '#fda4af',
+        date_text: '#e11d48',
+        hero_gradient_from: '#0f172a',
+        hero_gradient_via: '#4c0519',
+        hero_gradient_to: '#1e1b4b'
+    },
+    sky: {
+        primary_dark: '#0f172a',
+        primary_mid: '#1e3a8a',
+        accent_primary: '#0284c7',
+        accent_light: '#38bdf8',
+        accent_bg: '#f0f9ff',
+        accent_shadow: 'rgba(2, 132, 199, 0.6)',
+        timeline_border: '#bae6fd',
+        btn_gradient_from: '#1e3a8a',
+        btn_gradient_to: '#0284c7',
+        btn_border: '#1e3a8a',
+        btn_shadow: 'rgba(2, 132, 199, 0.3)',
+        milestone_bg_from: '#f0f9ff',
+        milestone_bg_to: '#e0f2fe',
+        milestone_border: '#bae6fd',
+        milestone_shadow: 'rgba(2, 132, 199, 0.1)',
+        flight_text: '#0284c7',
+        map_hover: '#0369a1',
+        subtitle_text: '#7dd3fc',
+        date_text: '#0284c7',
+        hero_gradient_from: '#0f172a',
+        hero_gradient_via: '#1e3a8a',
+        hero_gradient_to: '#0c4a6e'
+    },
+    emerald: {
+        primary_dark: '#0f172a',
+        primary_mid: '#064e3b',
+        accent_primary: '#10b981',
+        accent_light: '#6ee7b7',
+        accent_bg: '#f0fdf4',
+        accent_shadow: 'rgba(16, 185, 129, 0.4)',
+        timeline_border: '#a7f3d0',
+        btn_gradient_from: '#064e3b',
+        btn_gradient_to: '#10b981',
+        btn_border: '#064e3b',
+        btn_shadow: 'rgba(16, 185, 129, 0.25)',
+        milestone_bg_from: '#f0fdf4',
+        milestone_bg_to: '#dcfce7',
+        milestone_border: '#a7f3d0',
+        milestone_shadow: 'rgba(16, 185, 129, 0.08)',
+        flight_text: '#059669',
+        map_hover: '#047857',
+        subtitle_text: '#6ee7b7',
+        date_text: '#059669',
+        hero_gradient_from: '#0f172a',
+        hero_gradient_via: '#064e3b',
+        hero_gradient_to: '#0f172a'
+    },
+    amber: {
+        primary_dark: '#1e1b4b',
+        primary_mid: '#451a03',
+        accent_primary: '#f59e0b',
+        accent_light: '#fcd34d',
+        accent_bg: '#fffbeb',
+        accent_shadow: 'rgba(245, 158, 11, 0.4)',
+        timeline_border: '#fde68a',
+        btn_gradient_from: '#451a03',
+        btn_gradient_to: '#f59e0b',
+        btn_border: '#451a03',
+        btn_shadow: 'rgba(245, 158, 11, 0.25)',
+        milestone_bg_from: '#fffbeb',
+        milestone_bg_to: '#fef3c7',
+        milestone_border: '#fde68a',
+        milestone_shadow: 'rgba(245, 158, 11, 0.08)',
+        flight_text: '#d97706',
+        map_hover: '#b45309',
+        subtitle_text: '#fde047',
+        date_text: '#d97706',
+        hero_gradient_from: '#1e1b4b',
+        hero_gradient_via: '#451a03',
+        hero_gradient_to: '#0f172a'
+    },
+    indigo: {
+        primary_dark: '#0f172a',
+        primary_mid: '#311042',
+        accent_primary: '#6366f1',
+        accent_light: '#a5b4fc',
+        accent_bg: '#eef2ff',
+        accent_shadow: 'rgba(99, 102, 241, 0.4)',
+        timeline_border: '#c7d2fe',
+        btn_gradient_from: '#311042',
+        btn_gradient_to: '#6366f1',
+        btn_border: '#311042',
+        btn_shadow: 'rgba(99, 102, 241, 0.25)',
+        milestone_bg_from: '#eef2ff',
+        milestone_bg_to: '#e0e7ff',
+        milestone_border: '#c7d2fe',
+        milestone_shadow: 'rgba(99, 102, 241, 0.08)',
+        flight_text: '#4f46e5',
+        map_hover: '#4338ca',
+        subtitle_text: '#a5b4fc',
+        date_text: '#4f46e5',
+        hero_gradient_from: '#0f172a',
+        hero_gradient_via: '#311042',
+        hero_gradient_to: '#1e1b4b'
+    }
+};
+
 // 動態更新 Tailwind CSS 色彩配置與主題變數 (含同色系自動衍生)
 function applyTheme(theme) {
     const root = document.documentElement;
@@ -29,37 +184,44 @@ function applyTheme(theme) {
     }
     theme = theme || {};
 
+    const themeName = (theme.primary || '').toLowerCase();
+    const basePalette = DESIGNER_PALETTES[themeName] || null;
+
     // 核心主視覺 Accent 顏色，若未提供則多層備用
-    const accentPrimary = theme.accent_primary || theme.date_text || theme.primary_mid || '#475569';
-    const accentShadow = theme.accent_shadow || hexToRgba(accentPrimary, 0.4);
-    const accentBg = theme.accent_bg || hexToRgba(accentPrimary, 0.08);
-    const accentLight = theme.accent_light || hexToRgba(accentPrimary, 0.35);
-    const timelineBorder = theme.timeline_border || accentLight;
-    const dateText = theme.date_text || accentPrimary;
+    const accentPrimary = theme.accent_primary || (basePalette ? basePalette.accent_primary : '#0284c7');
+
+    // 若無 Preset 匹配，依據 accentPrimary 動態推算 22 個 Token
+    const computedHeroVia = (basePalette && basePalette.hero_gradient_via) ? basePalette.hero_gradient_via : darkenHex(accentPrimary, 0.35);
+    const computedSubtitle = (basePalette && basePalette.subtitle_text) ? basePalette.subtitle_text : lightenHex(accentPrimary);
+    const computedAccentLight = (basePalette && basePalette.accent_light) ? basePalette.accent_light : hexToRgba(accentPrimary, 0.35);
+    const computedAccentBg = (basePalette && basePalette.accent_bg) ? basePalette.accent_bg : hexToRgba(accentPrimary, 0.08);
+    const computedAccentShadow = (basePalette && basePalette.accent_shadow) ? basePalette.accent_shadow : hexToRgba(accentPrimary, 0.4);
+    const computedTimelineBorder = (basePalette && basePalette.timeline_border) ? basePalette.timeline_border : hexToRgba(accentPrimary, 0.35);
+    const computedDateText = (basePalette && basePalette.date_text) ? basePalette.date_text : accentPrimary;
 
     const computedTheme = {
-        '--color-primary-dark': theme.primary_dark || '#0f172a',
-        '--color-primary-mid': theme.primary_mid || accentPrimary,
+        '--color-primary-dark': theme.primary_dark || (basePalette ? basePalette.primary_dark : '#0f172a'),
+        '--color-primary-mid': theme.primary_mid || (basePalette ? basePalette.primary_mid : accentPrimary),
         '--color-accent-primary': accentPrimary,
-        '--color-accent-light': accentLight,
-        '--color-accent-bg': accentBg,
-        '--color-accent-shadow': accentShadow,
-        '--color-timeline-border': timelineBorder,
-        '--color-btn-gradient-from': theme.btn_gradient_from || theme.primary_mid || accentPrimary,
-        '--color-btn-gradient-to': theme.btn_gradient_to || accentPrimary,
-        '--color-btn-border': theme.btn_border || theme.btn_gradient_from || accentPrimary,
-        '--color-btn-shadow': theme.btn_shadow || hexToRgba(accentPrimary, 0.25),
-        '--color-milestone-bg-from': theme.milestone_bg_from || accentBg,
-        '--color-milestone-bg-to': theme.milestone_bg_to || hexToRgba(accentPrimary, 0.15),
-        '--color-milestone-border': theme.milestone_border || timelineBorder,
-        '--color-milestone-shadow': theme.milestone_shadow || hexToRgba(accentPrimary, 0.08),
-        '--color-flight-text': theme.flight_text || accentPrimary,
-        '--color-map-hover': theme.map_hover || accentPrimary,
-        '--color-subtitle-text': theme.subtitle_text || accentLight,
-        '--color-date-text': dateText,
-        '--color-hero-gradient-from': theme.hero_gradient_from || '#0f172a',
-        '--color-hero-gradient-via': theme.hero_gradient_via || theme.primary_mid || accentPrimary,
-        '--color-hero-gradient-to': theme.hero_gradient_to || '#1e1b4b'
+        '--color-accent-light': theme.accent_light || computedAccentLight,
+        '--color-accent-bg': theme.accent_bg || computedAccentBg,
+        '--color-accent-shadow': theme.accent_shadow || computedAccentShadow,
+        '--color-timeline-border': theme.timeline_border || computedTimelineBorder,
+        '--color-btn-gradient-from': theme.btn_gradient_from || (basePalette ? basePalette.btn_gradient_from : accentPrimary),
+        '--color-btn-gradient-to': theme.btn_gradient_to || (basePalette ? basePalette.btn_gradient_to : accentPrimary),
+        '--color-btn-border': theme.btn_border || (basePalette ? basePalette.btn_border : accentPrimary),
+        '--color-btn-shadow': theme.btn_shadow || (basePalette ? basePalette.btn_shadow : hexToRgba(accentPrimary, 0.25)),
+        '--color-milestone-bg-from': theme.milestone_bg_from || (basePalette ? basePalette.milestone_bg_from : computedAccentBg),
+        '--color-milestone-bg-to': theme.milestone_bg_to || (basePalette ? basePalette.milestone_bg_to : hexToRgba(accentPrimary, 0.15)),
+        '--color-milestone-border': theme.milestone_border || (basePalette ? basePalette.milestone_border : computedTimelineBorder),
+        '--color-milestone-shadow': theme.milestone_shadow || (basePalette ? basePalette.milestone_shadow : hexToRgba(accentPrimary, 0.08)),
+        '--color-flight-text': theme.flight_text || (basePalette ? basePalette.flight_text : accentPrimary),
+        '--color-map-hover': theme.map_hover || (basePalette ? basePalette.map_hover : accentPrimary),
+        '--color-subtitle-text': theme.subtitle_text || computedSubtitle,
+        '--color-date-text': theme.date_text || computedDateText,
+        '--color-hero-gradient-from': theme.hero_gradient_from || (basePalette ? basePalette.hero_gradient_from : '#0f172a'),
+        '--color-hero-gradient-via': theme.hero_gradient_via || computedHeroVia,
+        '--color-hero-gradient-to': theme.hero_gradient_to || (basePalette ? basePalette.hero_gradient_to : '#1e1b4b')
     };
 
     for (const [cssVar, val] of Object.entries(computedTheme)) {
@@ -325,6 +487,54 @@ document.addEventListener('DOMContentLoaded', init);
 window.initItineraryView = init;
 window.getItineraryData = () => itineraryData;
 window.renderItineraryData = (data) => {
+    if (!data) return;
     itineraryData = data;
-    renderItinerary();
+    itineraryData.meta = itineraryData.meta || {};
+    itineraryData.days = itineraryData.days || [];
+
+    // 1. 更新 Meta 與主題
+    document.title = itineraryData.meta.title || "VoyaGen 旅遊行程";
+    const titleEl = document.getElementById('trip-title');
+    if (titleEl) {
+        titleEl.innerText = itineraryData.meta.title || "";
+    }
+    const subtitleEl = document.getElementById('trip-subtitle');
+    if (subtitleEl) {
+        subtitleEl.innerText = itineraryData.meta.subtitle || "✦ 旅遊行程 ✦";
+    }
+    const dateEl = document.getElementById('trip-date');
+    if (dateEl) {
+        dateEl.innerText = itineraryData.meta.date_range || "";
+    }
+    const routeEl = document.getElementById('trip-route');
+    const dividerEl = document.getElementById('trip-divider');
+    if (routeEl) {
+        routeEl.innerText = itineraryData.meta.route || "";
+        if (itineraryData.meta.route) {
+            routeEl.classList.remove('hidden');
+            if (dividerEl) dividerEl.classList.remove('hidden');
+        }
+    }
+    const updateEl = document.getElementById('trip-update');
+    if (updateEl) {
+        updateEl.innerText = `最後更新：${itineraryData.meta.last_updated || '無'}`;
+    }
+
+    applyTheme(itineraryData.meta.theme || {});
+
+    // 2. 初始化側邊欄
+    const sidebar = document.getElementById('day-sidebar');
+    if (sidebar) {
+        const daysList = itineraryData.days || [];
+        sidebar.innerHTML = daysList.map(day => `
+            <button onclick="switchDay(${day.day_number})" id="btn-day${day.day_number}" class="day-btn flex-shrink-0 text-left px-4 py-3 rounded-xl border border-slate-100 font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                Day ${day.day_number}
+                <span class="block text-xs font-normal opacity-80 mt-0.5">${day.day_title || ''}</span>
+            </button>
+        `).join("");
+    }
+
+    // 3. 載入 Day 1
+    const startDay = itineraryData.days.length > 0 ? itineraryData.days[0].day_number : 1;
+    switchDay(startDay);
 };

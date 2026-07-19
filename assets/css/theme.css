@@ -276,14 +276,19 @@ details summary::-webkit-details-marker { display: none; }
     color: var(--color-date-text) !important;
 }
 
-/* Hero Banner 動態漸層背景 */
+/* Hero Banner 動態漸層背景與質感文字 */
 #hero-section {
     background: linear-gradient(135deg, var(--color-hero-gradient-from) 0%, var(--color-hero-gradient-via) 50%, var(--color-hero-gradient-to) 100%) !important;
 }
 
-/* Hero Banner 網頁副標題動態配色 */
+#trip-title {
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.35) !important;
+}
+
 #trip-subtitle {
     color: var(--color-subtitle-text) !important;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.35) !important;
 }
 
 /* ==========================================================================
