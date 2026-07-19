@@ -7,75 +7,67 @@ function getQueryParam(name) {
     return urlParams.get(name);
 }
 
-// 動態更新 Tailwind CSS 色彩配置與主題變數
+// 顏色轉換輔助函式 (HEX 轉 RGBA)
+function hexToRgba(hex, alpha = 1) {
+    if (!hex || typeof hex !== 'string') return `rgba(71, 85, 105, ${alpha})`;
+    let cleanHex = hex.replace('#', '').trim();
+    if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(c => c + c).join('');
+    }
+    if (cleanHex.length !== 6) return `rgba(71, 85, 105, ${alpha})`;
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// 動態更新 Tailwind CSS 色彩配置與主題變數 (含同色系自動衍生)
 function applyTheme(theme) {
     const root = document.documentElement;
-    
-    // 預設中性配色 (作為 fallback，如果行程 JSON 沒定義某些欄位時使用)
-    const defaults = {
-        '--color-primary-dark': '#0f172a',
-        '--color-primary-mid': '#334155',
-        '--color-accent-primary': '#475569',
-        '--color-accent-light': '#cbd5e1',
-        '--color-accent-bg': '#f8fafc',
-        '--color-accent-shadow': 'rgba(71, 85, 105, 0.2)',
-        '--color-timeline-border': '#e2e8f0',
-        '--color-btn-gradient-from': '#334155',
-        '--color-btn-gradient-to': '#475569',
-        '--color-btn-border': '#334155',
-        '--color-btn-shadow': 'rgba(71, 85, 105, 0.1)',
-        '--color-milestone-bg-from': '#f8fafc',
-        '--color-milestone-bg-to': '#f1f5f9',
-        '--color-milestone-border': '#e2e8f0',
-        '--color-milestone-shadow': 'rgba(0, 0, 0, 0.05)',
-        '--color-flight-text': '#475569',
-        '--color-map-hover': '#1e293b',
-        '--color-subtitle-text': '#94a3b8',
-        '--color-date-text': '#475569',
-        '--color-hero-gradient-from': '#0f172a',
-        '--color-hero-gradient-via': '#334155',
-        '--color-hero-gradient-to': '#475569'
-    };
-    
-    // 1. 套用預設中性色
-    for (const [key, val] of Object.entries(defaults)) {
-        root.style.setProperty(key, val);
+    if (typeof theme === 'string') {
+        theme = { primary: theme };
     }
-    
-    // 2. 從 JSON theme 中讀取自訂屬性進行覆蓋
-    const customMapping = {
-        'primary_dark': '--color-primary-dark',
-        'primary_mid': '--color-primary-mid',
-        'accent_primary': '--color-accent-primary',
-        'accent_light': '--color-accent-light',
-        'accent_bg': '--color-accent-bg',
-        'accent_shadow': '--color-accent-shadow',
-        'timeline_border': '--color-timeline-border',
-        'btn_gradient_from': '--color-btn-gradient-from',
-        'btn_gradient_to': '--color-btn-gradient-to',
-        'btn_border': '--color-btn-border',
-        'btn_shadow': '--color-btn-shadow',
-        'milestone_bg_from': '--color-milestone-bg-from',
-        'milestone_bg_to': '--color-milestone-bg-to',
-        'milestone_border': '--color-milestone-border',
-        'milestone_shadow': '--color-milestone-shadow',
-        'flight_text': '--color-flight-text',
-        'map_hover': '--color-map-hover',
-        'subtitle_text': '--color-subtitle-text',
-        'date_text': '--color-date-text',
-        'hero_gradient_from': '--color-hero-gradient-from',
-        'hero_gradient_via': '--color-hero-gradient-via',
-        'hero_gradient_to': '--color-hero-gradient-to'
+    theme = theme || {};
+
+    // 核心主視覺 Accent 顏色，若未提供則多層備用
+    const accentPrimary = theme.accent_primary || theme.date_text || theme.primary_mid || '#475569';
+    const accentShadow = theme.accent_shadow || hexToRgba(accentPrimary, 0.4);
+    const accentBg = theme.accent_bg || hexToRgba(accentPrimary, 0.08);
+    const accentLight = theme.accent_light || hexToRgba(accentPrimary, 0.35);
+    const timelineBorder = theme.timeline_border || accentLight;
+    const dateText = theme.date_text || accentPrimary;
+
+    const computedTheme = {
+        '--color-primary-dark': theme.primary_dark || '#0f172a',
+        '--color-primary-mid': theme.primary_mid || accentPrimary,
+        '--color-accent-primary': accentPrimary,
+        '--color-accent-light': accentLight,
+        '--color-accent-bg': accentBg,
+        '--color-accent-shadow': accentShadow,
+        '--color-timeline-border': timelineBorder,
+        '--color-btn-gradient-from': theme.btn_gradient_from || theme.primary_mid || accentPrimary,
+        '--color-btn-gradient-to': theme.btn_gradient_to || accentPrimary,
+        '--color-btn-border': theme.btn_border || theme.btn_gradient_from || accentPrimary,
+        '--color-btn-shadow': theme.btn_shadow || hexToRgba(accentPrimary, 0.25),
+        '--color-milestone-bg-from': theme.milestone_bg_from || accentBg,
+        '--color-milestone-bg-to': theme.milestone_bg_to || hexToRgba(accentPrimary, 0.15),
+        '--color-milestone-border': theme.milestone_border || timelineBorder,
+        '--color-milestone-shadow': theme.milestone_shadow || hexToRgba(accentPrimary, 0.08),
+        '--color-flight-text': theme.flight_text || accentPrimary,
+        '--color-map-hover': theme.map_hover || accentPrimary,
+        '--color-subtitle-text': theme.subtitle_text || accentLight,
+        '--color-date-text': dateText,
+        '--color-hero-gradient-from': theme.hero_gradient_from || '#0f172a',
+        '--color-hero-gradient-via': theme.hero_gradient_via || theme.primary_mid || accentPrimary,
+        '--color-hero-gradient-to': theme.hero_gradient_to || '#1e1b4b'
     };
-    
-    for (const [jsonKey, cssVar] of Object.entries(customMapping)) {
-        if (theme && theme[jsonKey]) {
-            root.style.setProperty(cssVar, theme[jsonKey]);
-        }
+
+    for (const [cssVar, val] of Object.entries(computedTheme)) {
+        root.style.setProperty(cssVar, val);
     }
-    
+
     // 3. 動態更新 Favicon 顏色以符合主題色彩
-    const faviconColor = root.style.getPropertyValue('--color-accent-primary').trim() || '#475569';
+    const faviconColor = accentPrimary;
     const faviconEl = document.getElementById("favicon");
     if (faviconEl) {
         const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='${encodeURIComponent(faviconColor)}'/><path d='M16 2 A14 14 0 0 0 2 16 A14 14 0 0 0 16 30 A14 14 0 0 0 30 16 A14 14 0 0 0 16 2 Z' fill='none' stroke='white' stroke-width='1.5' opacity='0.3'/><path d='M16 2 Q22 16 16 30 Q10 16 16 2' fill='none' stroke='white' stroke-width='1.5' opacity='0.4'/><path d='M2 16 H30' fill='none' stroke='white' stroke-width='1.5' opacity='0.4'/><path d='M12 18 L24 8 L20 22 L16 19 L12 18 Z M16 19 L24 8 L12 18 Z' fill='white'/></svg>`;

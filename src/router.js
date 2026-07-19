@@ -60,17 +60,16 @@ function navigateTo(routeName) {
 }
 
 function handleHashChange() {
-    const hash = window.location.hash.replace('#', '').trim();
+    const rawHash = window.location.hash.replace('#', '').trim();
+    const cleanRoute = rawHash.split('?')[0];
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // 如果網址帶有 ?data= 參數且沒有明確指定 Hash，預設切換至 Viewer 視圖
-    if (urlParams.has('data') && !hash) {
+
+    if (cleanRoute && routes[cleanRoute]) {
+        navigateTo(cleanRoute);
+    } else if (urlParams.has('data')) {
         navigateTo('viewer');
-    } else if (hash && routes[hash]) {
-        navigateTo(hash);
     } else {
-        // 預設頁面：若有帶 data 則進 Viewer，否則進入 Dashboard (後續結合登入狀態判斷)
-        navigateTo(urlParams.has('data') ? 'viewer' : 'dashboard');
+        navigateTo('dashboard');
     }
 }
 

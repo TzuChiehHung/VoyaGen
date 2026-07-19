@@ -75,8 +75,6 @@ async function generateItineraryWithAI() {
     const destination = destInput ? destInput.value.trim() : '';
     const days = daysInput ? daysInput.value.trim() : '';
     const draft = draftInput ? draftInput.value.trim() : '';
-    const theme = themeSelect ? themeSelect.value : 'auto';
-    const userGeminiKey = (userApiKeyInput ? userApiKeyInput.value.trim() : '') || localStorage.getItem('voyagen_user_gemini_key') || '';
 
     if (!destination && !draft) {
         voyaDrive.showToast('請輸入旅遊目的地或行程文字草稿！', 'error');
@@ -94,91 +92,14 @@ async function generateItineraryWithAI() {
     setGenLoadingState(true);
 
     try {
-        const daysGuide = days ? `- 規劃天數：${days} 天` : '';
-        const themeGuide = (theme && theme !== 'auto') ? `指定主題風格色調：${theme}。` : '主題風格設為自動，為其分配協調的主題色彩。';
-
-        // 建立 System Instruction 與 User Prompt
-        const systemInstruction = `你是一位頂級專業的旅遊規劃專家。請根據使用者的需求，輸出符合標準 JSON 格式的旅遊行程。
-
-【重要：輸出 JSON 格式規範】
-你輸出的 JSON 必須嚴格符合以下結構：
-{
-  "meta": {
-    "title": "請將使用者輸入潤飾為吸引人且好辨識的專業標題 (如：2026 日本京都大阪 5天4夜古都櫻花質感之旅)",
-    "subtitle": "副標題 (如：清水寺散策 ✕ 嵐山小火車 ✕ 道頓堀美食體驗)",
-    "date_range": "日期區間 (如：2026/04/01 - 2026/04/05)",
-    "version": "1.0",
-    "last_updated": "${new Date().toISOString().split('T')[0]}",
-    "route": "景點路線概括 (如：關西機場 ➔ 京都 ➔ 大阪 ➔ 關西機場)",
-    "theme": ${theme === 'auto' ? `{
-      "primary": "#1e293b",
-      "accent": "#6366f1",
-      "accent_light": "#a5b4fc",
-      "bg_gradient_start": "#0f172a",
-      "bg_gradient_end": "#1e1b4b"
-    }` : `"${theme}"`}
-  },
-  "days": [
-    {
-      "day_number": 1,
-      "date_label": "DAY 1",
-      "day_title": "單日主題 (如：抵達關西與京都古都風華)",
-      "timeline": [
-        {
-          "time": "14:00",
-          "title": "搭乘 HARUKA 特急前往京都",
-          "type": "transfer",
-          "description": "於關西國際機場搭乘 HARUKA 直接抵達京都車站 Check-in。",
-          "bullets": ["建議提前預訂 ICOCA & HARUKA 優惠套票"],
-          "map_link": "https://www.google.com/maps/search/?api=1&query=京都車站"
-        },
-        {
-          "time": "16:00",
-          "title": "清水寺與二年坂、三年坂散策",
-          "type": "milestone",
-          "description": "漫步於古色古香的石板路，遠眺京都塔夕陽美景。",
-          "bullets": ["必訪本堂舞台", "地主神社祈求良緣"],
-          "notes": [
-            {
-              "title": "貼心提醒",
-              "content": "石板路較多階梯，建議穿著舒適步行鞋。",
-              "icon": "fa-solid fa-person-walking"
-            }
-          ],
-          "map_link": "https://www.google.com/maps/search/?api=1&query=清水寺"
-        }
-      ]
-    }
-  ]
-}
-
-請確保：
-1. title 必須經過 AI 專業潤飾，變成兼具年份、地區、天數與主題特點的吸睛標題 (例如：2026 釜山海景與巨濟島 4天3夜質感之旅)。
-2. ${themeGuide}
-3. 物件 Key 名稱必須精準為 day_number, day_title, date_label, timeline, time, title, type, description, bullets, notes, map_link。
-4. type 可為 "milestone" (主要景點/美食) 或 "transfer" (交通移動)。
-5. map_link 必須為完整的 Google Maps 搜尋網址，格式為 https://www.google.com/maps/search/?api=1&query=地點名稱。
-6. 輸出必須是純粹的合法 JSON 格式，不可以包含 Markdown 註解如 \`\`\`json。`;
-
-        let userPrompt = "";
-
-        if (currentEditSourceData) {
-            userPrompt = `【行程微調任務】
-以下是目前的現有行程 JSON：
-${JSON.stringify(currentEditSourceData, null, 2)}
-
-使用者希望進行以下修改與編修：
-"${draft || '請優化景點順序與交通銜接'}"
-
-請根據上述修改要求，修訂並輸出最終完整的行程 JSON。`;
-        } else {
-            userPrompt = `【全新行程規劃任務】
-- 旅遊目的地：${destination || '根據草稿規劃'}
-${daysGuide}
-- 指定主題/細節草稿：${draft || '請安排最具代表性的熱門景點與美食體驗'}
-
-請生成一份專業、結構完整且符合 JSON 規範的旅遊行程。`;
-        }
+        // 呼叫 voyaPrompts 建立 System Instruction 與 User Prompt (預設自動主題)
+        const systemInstruction = voyaPrompts.buildSystemInstruction('auto');
+        const userPrompt = voyaPrompts.buildUserPrompt({
+            destination,
+            days,
+            draft,
+            currentEditSourceData
+        });
 
         // 呼叫 Generative Language API
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`;
@@ -229,7 +150,7 @@ ${daysGuide}
         const parsedJson = JSON.parse(cleanedText);
         const generatedItinerary = normalizeItinerarySchema(parsedJson);
 
-        voyaDrive.showToast('✨ AI 行程規劃完成！正在儲存至 Google Drive...', 'success');
+        voyaDrive.showToast('✨ AI 旅遊助理規劃完成！正在儲存至 Google Drive...', 'success');
 
         // 自動寫入或更新至 Google Drive (若已登入)
         let savedDirectUrl = null;
@@ -247,17 +168,19 @@ ${daysGuide}
             }
         }
 
-        // 跳轉至行程展示頁
+        // 立即渲染最新生成的行程至 DOM
+        if (typeof window.renderItineraryData === 'function') {
+            window.renderItineraryData(generatedItinerary);
+        }
+
+        // 切換至行程預覽頁面
         if (savedDirectUrl) {
             window.location.hash = `#viewer?data=${encodeURIComponent(savedDirectUrl)}`;
         } else {
-            // 直接以全域記憶體載入並展示
-            if (typeof window.initItineraryView === 'function') {
-                window.location.hash = '#viewer';
-                setTimeout(() => {
-                    window.renderItineraryData(generatedItinerary);
-                }, 100);
-            }
+            window.location.hash = '#viewer';
+        }
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('viewer');
         }
 
     } catch (err) {
@@ -283,7 +206,7 @@ function setGenLoadingState(isLoading) {
     }
     if (submitText) {
         if (isLoading) submitText.innerText = currentEditSourceData ? 'AI 正在精緻編修行程中...' : 'AI 正在規劃完美行程中...';
-        else submitText.innerText = currentEditSourceData ? '使用 AI 套用修改' : '開始 AI 智慧生成';
+        else submitText.innerText = currentEditSourceData ? '使用 AI 套用修改' : '開始規劃行程';
     }
 }
 

@@ -54,8 +54,8 @@ function renderItemHtml(item, colorTheme = '') {
                 <div class="note-box ${noteClass} text-xs p-3.5 rounded-lg flex items-start mt-3 shadow-sm">
                     <i class="${iconClass} text-[14px] mr-2 shrink-0 mt-0.5" ${iconStyle}></i>
                     <div>
-                        <span class="font-bold block mb-0.5">${note.title}</span>
-                        ${note.content}
+                        <span class="font-bold block mb-0.5">${note.title || ''}</span>
+                        ${note.content || ''}
                     </div>
                 </div>
             `;
@@ -120,7 +120,7 @@ function renderSplitHtml(item) {
         <div class="bg-slate-50/50 rounded-2xl border border-slate-100 mb-6 overflow-hidden mt-4">
             <div class="bg-white/80 px-4 py-3 border-b border-slate-200 flex items-center">
                 <i class="fa-solid fa-code-branch text-slate-600 mr-2 mt-0.5"></i>
-                <h3 class="font-bold text-slate-900 leading-none">${item.time} ${item.title}</h3>
+                <h3 class="font-bold text-slate-900 leading-none">${item.time || ''} ${item.title || ''}</h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2">
                 ${tracksHtml}

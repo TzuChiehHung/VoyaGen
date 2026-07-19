@@ -263,11 +263,13 @@ async function renderDashboard() {
             return `
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div>
-                        <div class="flex items-start justify-between gap-2 mb-2">
-                            <h3 class="font-bold text-slate-800 text-base line-clamp-1">${file.name.replace('.json', '')}</h3>
-                            <span class="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full shrink-0">JSON</span>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <input type="checkbox" class="dashboard-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer shrink-0" data-file-id="${file.id}" onchange="voyaDrive.onCheckboxChange()">
+                                <h3 class="font-bold text-slate-800 text-base truncate" title="${file.name.replace('.json', '')}">${file.name.replace('.json', '')}</h3>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">
+                        <p class="text-xs text-slate-400 mb-4 flex items-center gap-1 pl-6">
                             <i class="fa-regular fa-clock"></i>
                             最後更新：${modifiedDate}
                         </p>
@@ -288,6 +290,9 @@ async function renderDashboard() {
             `;
         }).join('');
 
+        // 初始化批次列狀態
+        onCheckboxChange();
+
     } catch (err) {
         console.error('載入儀表板失敗:', err);
         const isAuthError = err.message.includes('401') || err.message.includes('403');
@@ -307,6 +312,67 @@ async function renderDashboard() {
     }
 }
 
+/**
+ * 批次勾選與動作控制
+ */
+function onCheckboxChange() {
+    const checkboxes = Array.from(document.querySelectorAll('.dashboard-checkbox'));
+    const checkedCount = checkboxes.filter(cb => cb.checked).length;
+    const batchBar = document.getElementById('dashboard-batch-bar');
+    const countLabel = document.getElementById('selected-count-label');
+    const selectAllCb = document.getElementById('select-all-checkbox');
+
+    if (checkedCount > 0) {
+        if (batchBar) batchBar.classList.remove('hidden');
+        if (countLabel) countLabel.innerText = `已選擇 ${checkedCount} 個行程`;
+    } else {
+        if (batchBar) batchBar.classList.add('hidden');
+    }
+
+    if (selectAllCb) {
+        selectAllCb.checked = (checkboxes.length > 0 && checkedCount === checkboxes.length);
+    }
+}
+
+function toggleSelectAll(isChecked) {
+    const checkboxes = document.querySelectorAll('.dashboard-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+    onCheckboxChange();
+}
+
+async function deleteSelectedItineraries() {
+    const checkedBoxes = Array.from(document.querySelectorAll('.dashboard-checkbox:checked'));
+    if (checkedBoxes.length === 0) return;
+
+    if (!confirm(`確定要將選取的 ${checkedBoxes.length} 個行程移至垃圾桶嗎？`)) return;
+
+    const token = voyaAuth.getAccessToken();
+    if (!token) return;
+
+    showToast(`正在批次刪除 ${checkedBoxes.length} 個行程...`, 'info', 5000);
+
+    let deletedCount = 0;
+    for (const cb of checkedBoxes) {
+        const fileId = cb.getAttribute('data-file-id');
+        if (fileId) {
+            try {
+                await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                deletedCount++;
+            } catch (err) {
+                console.warn(`刪除行程 ${fileId} 失敗:`, err);
+            }
+        }
+    }
+
+    showToast(`🎉 成功刪除 ${deletedCount} 個行程！`, 'success');
+    await renderDashboard();
+}
+
 // 顯示非阻塞式 Toast 提示與進度 Notify
 function showToast(message, type = 'info', duration = 3000) {
     const container = document.getElementById('toast-container');
@@ -318,10 +384,10 @@ function showToast(message, type = 'info', duration = 3000) {
         : 'bg-slate-900 text-indigo-300 border-indigo-500/30';
     const icon = type === 'success' ? 'fa-circle-check text-emerald-400'
         : type === 'error' ? 'fa-circle-exclamation text-rose-400'
-        : 'fa-circle-notch fa-spin text-indigo-400';
+        : 'fa-circle-info text-indigo-400';
 
-    toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs font-semibold backdrop-blur-md transition-all duration-300 ${bgClass}`;
-    toast.innerHTML = `<i class="fa-solid ${icon} text-base shrink-0"></i><span>${message}</span>`;
+    toast.className = `${bgClass} border px-4 py-3 rounded-xl shadow-xl backdrop-blur-md flex items-center gap-3 text-sm font-bold animate-fade-in transition-all z-50`;
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
 
     container.appendChild(toast);
 
@@ -378,6 +444,9 @@ window.voyaDrive = {
     listItineraries,
     saveItineraryToDrive,
     deleteItineraryFromDrive,
+    deleteSelectedItineraries,
+    onCheckboxChange,
+    toggleSelectAll,
     uploadLocalJsonFile,
     renderDashboard,
     showToast

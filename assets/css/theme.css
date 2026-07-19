@@ -99,6 +99,7 @@ body {
     box-shadow: 0 0 8px var(--color-accent-shadow);
 }
 
+/* 🌹 玫瑰紅支線 (Rose) */
 .timeline-item-rose { 
     position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
     border-left: 2px solid #fda4af; /* rose-300 */
@@ -108,7 +109,9 @@ body {
     border-radius: 50%; background-color: #f43f5e; /* rose-500 */
     box-shadow: 0 0 8px rgba(244, 63, 94, 0.5);
 }
+.timeline-item-rose .text-amber-600 { color: #e11d48 !important; }
 
+/* 🌿 翠綠支線 (Emerald) */
 .timeline-item-emerald { 
     position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
     border-left: 2px solid #6ee7b7; /* emerald-300 */
@@ -118,6 +121,43 @@ body {
     border-radius: 50%; background-color: #10b981; /* emerald-500 */
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
 }
+.timeline-item-emerald .text-amber-600 { color: #059669 !important; }
+
+/* 🌊 天藍支線 (Sky) */
+.timeline-item-sky { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid #7dd3fc; /* sky-300 */
+}
+.timeline-item-sky .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: #0ea5e9; /* sky-500 */
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+}
+.timeline-item-sky .text-amber-600 { color: #0284c7 !important; }
+
+/* 💜 靛藍支線 (Indigo) */
+.timeline-item-indigo { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid #a5b4fc; /* indigo-300 */
+}
+.timeline-item-indigo .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: #6366f1; /* indigo-500 */
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+.timeline-item-indigo .text-amber-600 { color: #4f46e5 !important; }
+
+/* 暖黃/琥珀支線 (Amber) */
+.timeline-item-amber { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid #fcd34d; /* amber-300 */
+}
+.timeline-item-amber .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: #f59e0b; /* amber-500 */
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+.timeline-item-amber .text-amber-600 { color: #d97706 !important; }
 
 /* 文字裝飾與標題樣式 */
 .flight-text { color: var(--color-flight-text) !important; font-weight: bold; }
@@ -131,6 +171,9 @@ body {
 
 .timeline-item-rose .bullet-list li::before { color: #f43f5e; }
 .timeline-item-emerald .bullet-list li::before { color: #10b981; }
+.timeline-item-sky .bullet-list li::before { color: #0ea5e9; }
+.timeline-item-indigo .bullet-list li::before { color: #6366f1; }
+.timeline-item-amber .bullet-list li::before { color: #f59e0b; }
 .timeline-item-transfer .bullet-list li::before { color: #94a3b8; }
 
 /* 備註盒 (note-box) 統一底色與邊框 */
