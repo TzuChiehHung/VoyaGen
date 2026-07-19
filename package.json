@@ -1,0 +1,22 @@
+{
+  "name": "travel-itinerary-generator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Travel Itinerary Generator and Template Renderer",
+  "main": "src/render.js",
+  "scripts": {
+    "validate": "node scripts/validate-schema.js",
+    "test": "npm run validate"
+  },
+  "keywords": [
+    "travel",
+    "itinerary",
+    "generator",
+    "schema"
+  ],
+  "author": "Tzu-Chieh Hung",
+  "license": "MIT",
+  "devDependencies": {
+    "ajv": "^8.17.1"
+  }
+}
