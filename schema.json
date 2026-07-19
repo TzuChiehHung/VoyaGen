@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ItinerarySchema",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "route": { "type": "string" },
+        "date_range": { "type": "string" },
+        "last_updated": { "type": "string" },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "primary": { "type": "string" },
+            "hero_gradient_from": { "type": "string" },
+            "hero_gradient_via": { "type": "string" },
+            "hero_gradient_to": { "type": "string" },
+            "primary_dark": { "type": "string" },
+            "primary_mid": { "type": "string" },
+            "accent_primary": { "type": "string" },
+            "accent_light": { "type": "string" },
+            "accent_bg": { "type": "string" },
+            "accent_shadow": { "type": "string" },
+            "timeline_border": { "type": "string" },
+            "btn_gradient_from": { "type": "string" },
+            "btn_gradient_to": { "type": "string" },
+            "btn_border": { "type": "string" },
+            "btn_shadow": { "type": "string" },
+            "milestone_bg_from": { "type": "string" },
+            "milestone_bg_to": { "type": "string" },
+            "milestone_border": { "type": "string" },
+            "milestone_shadow": { "type": "string" },
+            "flight_text": { "type": "string" },
+            "map_hover": { "type": "string" },
+            "subtitle_text": { "type": "string" },
+            "date_text": { "type": "string" }
+          }
+        }
+      },
+      "required": ["title", "date_range"]
+    },
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day_number": { "type": "integer" },
+          "date_label": { "type": "string" },
+          "day_title": { "type": "string" },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "enum": ["milestone", "activity", "transfer", "split"] },
+                "time": { "type": "string" },
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "bullets": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "map_link": { "type": "string" },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "icon": { "type": "string" },
+                      "title": { "type": "string" },
+                      "content": { "type": "string" }
+                    },
+                    "required": ["title", "content"]
+                  }
+                },
+                "tracks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["track_name", "items"],
+                    "properties": {
+                      "track_name": { "type": "string" },
+                      "color_theme": { "type": "string", "enum": ["", "amber", "emerald", "sky", "indigo", "rose"] },
+                      "icon": { "type": "string", "description": "FontAwesome class, e.g. 'fa-solid fa-star'" },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": ["type", "time", "title"],
+                          "properties": {
+                            "type": { "type": "string", "enum": ["milestone", "activity", "transfer"] },
+                            "time": { "type": "string" },
+                            "title": { "type": "string" },
+                            "description": { "type": "string" },
+                            "bullets": {
+                              "type": "array",
+                              "items": { "type": "string" }
+                            },
+                            "map_link": { "type": "string" },
+                            "notes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": ["title", "content"],
+                                "properties": {
+                                  "icon": { "type": "string" },
+                                  "title": { "type": "string" },
+                                  "content": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "converge_note": { "type": "string" }
+              },
+              "required": ["type", "time", "title"]
+            }
+          }
+        },
+        "required": ["day_number", "date_label", "day_title", "timeline"]
+      }
+    }
+  },
+  "required": ["meta", "days"]
+}

@@ -1,0 +1,291 @@
+/* ==========================================================================
+   通用旅遊行程生成器 - 全域動態主題樣式表 (V1.2 - 參數優化版)
+   ========================================================================== */
+
+:root {
+    /* 預設海洋天空藍色系變數，會由 JS 根據主題動態更換 */
+    --color-primary-dark: #0f172a;
+    --color-primary-mid: #1e3a8a;
+    --color-accent-primary: #0284c7;
+    --color-accent-light: #38bdf8;
+    --color-accent-bg: #f0f9ff;
+    --color-emerald-success: #0d9488;
+    
+    --color-bg-main: #f8fafc;
+    --color-text-main: #334155;
+    --color-text-muted: #64748b;
+    
+    /* 參數化動態主題配置 */
+    --color-accent-shadow: rgba(2, 132, 199, 0.6);
+    --color-timeline-border: #bae6fd;
+    
+    --color-btn-gradient-from: #1e3a8a;
+    --color-btn-gradient-to: #0284c7;
+    --color-btn-border: #1e3a8a;
+    --color-btn-shadow: rgba(2, 132, 199, 0.3);
+    
+    --color-milestone-bg-from: #f0f9ff;
+    --color-milestone-bg-to: #e0f2fe;
+    --color-milestone-border: #bae6fd;
+    --color-milestone-shadow: rgba(2, 132, 199, 0.1);
+    
+    --color-flight-text: #0284c7;
+    --color-map-hover: #0369a1;
+    --color-date-text: #0284c7;
+    
+    --color-hero-gradient-from: #0f172a;
+    --color-hero-gradient-via: #1e3a8a;
+    --color-hero-gradient-to: #0c4a6e;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+}
+
+.hide { display: none !important; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 頁籤與按鈕高亮樣式 */
+.day-btn.active { 
+    background: linear-gradient(135deg, var(--color-btn-gradient-from) 0%, var(--color-btn-gradient-to) 100%) !important; 
+    color: white !important; 
+    border-color: var(--color-btn-border) !important; 
+    box-shadow: 0 4px 10px -2px var(--color-btn-shadow) !important;
+}
+
+/* 頁籤底線高亮 (泰國天燈版適配) */
+.tab-btn.active { 
+    border-bottom: 4px solid var(--color-accent-primary); 
+    color: var(--color-primary-dark); 
+    font-weight: 700; 
+}
+
+/* 時間軸基礎樣式 (主線行程) */
+.timeline-item { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid var(--color-timeline-border); 
+}
+.timeline-item:last-child { border-left: 2px solid transparent; padding-bottom: 0; }
+.timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: var(--color-accent-primary); 
+    box-shadow: 0 0 8px var(--color-accent-shadow); 
+}
+
+/* 交通時間軸 (虛線) */
+.timeline-item-transfer { position: relative; padding-left: 2rem; padding-bottom: 1.5rem; border-left: 2px dashed #cbd5e1; }
+.timeline-item-transfer:last-child { border-left: 2px dashed transparent; padding-bottom: 0; }
+.timeline-dot-transfer { 
+    position: absolute; left: -0.32rem; top: 0.35rem; width: 0.6rem; height: 0.6rem; 
+    border-radius: 50%; background-color: #94a3b8; 
+}
+
+/* 分支與主線樣式適配類別 */
+.timeline-item-theme { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid var(--color-timeline-border);
+}
+.timeline-item-theme .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: var(--color-accent-primary); 
+    box-shadow: 0 0 8px var(--color-accent-shadow);
+}
+
+.timeline-item-rose { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid #fda4af; /* rose-300 */
+}
+.timeline-item-rose .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: #f43f5e; /* rose-500 */
+    box-shadow: 0 0 8px rgba(244, 63, 94, 0.5);
+}
+
+.timeline-item-emerald { 
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem; 
+    border-left: 2px solid #6ee7b7; /* emerald-300 */
+}
+.timeline-item-emerald .timeline-dot { 
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; 
+    border-radius: 50%; background-color: #10b981; /* emerald-500 */
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+/* 文字裝飾與標題樣式 */
+.flight-text { color: var(--color-flight-text) !important; font-weight: bold; }
+
+/* 子彈筆記樣式 */
+.bullet-list li { position: relative; padding-left: 1.25rem; margin-bottom: 0.25rem; list-style-type: none; }
+.bullet-list li::before { 
+    content: "✦"; position: absolute; left: 0; 
+    color: var(--color-accent-primary); font-size: 0.8em; top: 0.25rem; 
+}
+
+.timeline-item-rose .bullet-list li::before { color: #f43f5e; }
+.timeline-item-emerald .bullet-list li::before { color: #10b981; }
+.timeline-item-transfer .bullet-list li::before { color: #94a3b8; }
+
+/* 備註盒 (note-box) 統一底色與邊框 */
+.note-box {
+    background-color: var(--color-accent-bg);
+    border-left: 4px solid var(--color-accent-light);
+    padding: 0.75rem;
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #334155;
+    display: flex;
+    align-items: flex-start;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.note-box i {
+    color: var(--color-accent-primary);
+    margin-right: 0.75rem;
+    margin-top: 0.125rem;
+}
+
+/* 🌿 綠色支線 (Emerald) 備註盒適配 */
+.note-box-emerald {
+    background-color: #f0fdf4 !important;
+    border-left-color: #34d399 !important;
+}
+.note-box-emerald i { color: #10b981 !important; }
+
+/* 🌹 玫瑰紅支線 (Rose) 備註盒適配 */
+.note-box-rose {
+    background-color: #fff1f2 !important;
+    border-left-color: #fb7185 !important;
+}
+.note-box-rose i { color: #f43f5e !important; }
+
+/* 🌊 天空藍支線 (Sky) 備註盒適配 */
+.note-box-sky {
+    background-color: #f0f9ff !important;
+    border-left-color: #7dd3fc !important;
+}
+.note-box-sky i { color: #0ea5e9 !important; }
+
+/* 💜 靛藍支線 (Indigo) 備註盒適配 */
+.note-box-indigo {
+    background-color: #eef2ff !important;
+    border-left-color: #a5b4fc !important;
+}
+.note-box-indigo i { color: #6366f1 !important; }
+
+
+/* 起終點里程碑高亮樣式 */
+.milestone-highlight { 
+    background: linear-gradient(to right, var(--color-milestone-bg-from), var(--color-milestone-bg-to)) !important; 
+    border: 1px solid var(--color-milestone-border) !important; 
+    box-shadow: 0 4px 12px -2px var(--color-milestone-shadow) !important; 
+}
+
+/* details 手風琴元件 */
+details summary::-webkit-details-marker { display: none; }
+
+/* Google Maps 連結與懸停樣式 */
+.map-link-theme { color: var(--color-accent-primary); transition: color 0.2s ease-in-out; }
+.map-link-theme:hover { color: var(--color-map-hover) !important; }
+
+.map-link-rose { color: #f43f5e; transition: color 0.2s ease-in-out; }
+.map-link-rose:hover { color: #be123c; }
+
+.map-link-emerald { color: var(--color-emerald-success); transition: color 0.2s ease-in-out; }
+.map-link-emerald:hover { color: #047857; }
+
+/* 重點文字 Highlight 共通樣式 */
+.text-highlight-theme { color: var(--color-flight-text) !important; font-weight: 700; }
+.text-highlight-rose { color: #e11d48; font-weight: 700; }
+.text-highlight-emerald { color: #059669; font-weight: 700; }
+.text-highlight-black { color: #1e293b; font-weight: 700; }
+
+/* 標題與里程碑文字動態配色適配 */
+.text-indigo-900 {
+    color: var(--color-primary-mid) !important;
+}
+
+/* 時間與 Day 標籤動態配色適配 */
+.text-amber-600 {
+    color: var(--color-date-text) !important;
+}
+
+/* Hero Banner 動態漸層背景 */
+#hero-section {
+    background: linear-gradient(135deg, var(--color-hero-gradient-from) 0%, var(--color-hero-gradient-via) 50%, var(--color-hero-gradient-to) 100%) !important;
+}
+
+/* Hero Banner 網頁副標題動態配色 */
+#trip-subtitle {
+    color: var(--color-subtitle-text) !important;
+}
+
+/* ==========================================================================
+   Split Track Badge 標籤顏色
+   ========================================================================== */
+
+/* 主線 (跟隨 meta.theme 主題色) */
+.split-badge-theme {
+    background-color: var(--color-accent-bg);
+    border-color: var(--color-accent-light);
+    color: var(--color-primary-mid);
+}
+.split-badge-theme i { color: var(--color-accent-primary); }
+
+/* Emerald 綠 */
+.split-badge-emerald { background-color: #f0fdf4; border-color: #86efac; color: #166534; }
+.split-badge-emerald i { color: #10b981; }
+
+/* Sky 藍 */
+.split-badge-sky { background-color: #f0f9ff; border-color: #7dd3fc; color: #0369a1; }
+.split-badge-sky i { color: #0ea5e9; }
+
+/* Indigo 靛藍 */
+.split-badge-indigo { background-color: #eef2ff; border-color: #a5b4fc; color: #3730a3; }
+.split-badge-indigo i { color: #6366f1; }
+
+/* Rose 玫瑰紅 */
+.split-badge-rose { background-color: #fff1f2; border-color: #fda4af; color: #9f1239; }
+.split-badge-rose i { color: #f43f5e; }
+
+/* ==========================================================================
+   Sky / Indigo 分流時間軸 (補充 emerald/rose 以外的顏色)
+   ========================================================================== */
+
+.timeline-item-sky {
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem;
+    border-left: 2px solid #7dd3fc; /* sky-300 */
+}
+.timeline-item-sky .timeline-dot {
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem;
+    border-radius: 50%; background-color: #0ea5e9;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+}
+.timeline-item-sky .bullet-list li::before { color: #0ea5e9; }
+.map-link-sky { color: #0ea5e9; transition: color 0.2s ease-in-out; }
+.map-link-sky:hover { color: #0284c7; }
+
+.timeline-item-indigo {
+    position: relative; padding-left: 2rem; padding-bottom: 1.5rem;
+    border-left: 2px solid #a5b4fc; /* indigo-300 */
+}
+.timeline-item-indigo .timeline-dot {
+    position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem;
+    border-radius: 50%; background-color: #6366f1;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+.timeline-item-indigo .bullet-list li::before { color: #6366f1; }
+.map-link-indigo { color: #6366f1; transition: color 0.2s ease-in-out; }
+.map-link-indigo:hover { color: #4f46e5; }
+
+/* ==========================================================================
+   Split Track 內部時間文字跟隨 track 色系（覆蓋全域 text-amber-600）
+   ========================================================================== */
+.timeline-item-emerald .text-amber-600 { color: #10b981 !important; }
+.timeline-item-sky     .text-amber-600 { color: #0ea5e9 !important; }
+.timeline-item-indigo  .text-amber-600 { color: #6366f1 !important; }
+.timeline-item-rose    .text-amber-600 { color: #f43f5e !important; }
