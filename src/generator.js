@@ -123,7 +123,7 @@ function initGeneratorView(sourceData = null) {
         // 全新生成模式
         if (modeBadge) modeBadge.innerText = '✦ AI 專屬規劃 ✦';
         if (modeTitle) modeTitle.innerText = '規劃您的夢幻旅程';
-        if (modeDesc) modeDesc.innerText = '填寫目的地與偏好，Gemini 3.5 Flash 將秒級為您規劃完美行程。';
+        if (modeDesc) modeDesc.innerText = '填寫目的地與偏好，Gemini 3.5 Flash 將秒級為您規劃完美行程';
         if (submitBtnText) submitBtnText.innerText = '開始 AI 智慧生成';
 
         if (destInput) destInput.value = '';

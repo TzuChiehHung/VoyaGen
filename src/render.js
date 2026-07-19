@@ -221,7 +221,9 @@ function applyTheme(theme) {
         '--color-date-text': theme.date_text || computedDateText,
         '--color-hero-gradient-from': theme.hero_gradient_from || (basePalette ? basePalette.hero_gradient_from : '#0f172a'),
         '--color-hero-gradient-via': theme.hero_gradient_via || computedHeroVia,
-        '--color-hero-gradient-to': theme.hero_gradient_to || (basePalette ? basePalette.hero_gradient_to : '#1e1b4b')
+        '--color-hero-gradient-to': theme.hero_gradient_to || (basePalette ? basePalette.hero_gradient_to : '#1e1b4b'),
+        '--color-logo-gradient-from': theme.btn_gradient_from || (basePalette ? basePalette.btn_gradient_from : '#4f46e5'),
+        '--color-logo-gradient-to': accentPrimary || (basePalette ? basePalette.accent_primary : '#6366f1')
     };
 
     for (const [cssVar, val] of Object.entries(computedTheme)) {

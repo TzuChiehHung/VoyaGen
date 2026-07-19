@@ -31,6 +31,14 @@ function navigateTo(routeName) {
         }
     });
 
+    // 若非行程檢視頁，重置為 VoyaGen 預設藍青主題
+    if (targetRoute !== 'viewer' && typeof window.applyTheme === 'function') {
+        window.applyTheme({
+            accent_primary: '#0284c7',
+            btn_gradient_from: '#0284c7'
+        });
+    }
+
     // 若切換至 dashboard，觸發 Dashboard 讀取
     if (targetRoute === 'dashboard' && typeof window.voyaDrive !== 'undefined' && typeof window.voyaDrive.renderDashboard === 'function') {
         window.voyaDrive.renderDashboard();
@@ -46,14 +54,14 @@ function navigateTo(routeName) {
         window.initItineraryView();
     }
 
-    // 更新導覽列 Active 狀態
+    // 更新導覽列 Active 狀態 (深海星藍底線樣式)
     document.querySelectorAll('.nav-link').forEach(link => {
         const linkRoute = link.getAttribute('data-route');
         if (linkRoute === targetRoute) {
-            link.classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600', 'font-bold');
-            link.classList.remove('text-slate-600', 'hover:text-slate-900');
+            link.classList.add('text-blue-700', 'border-b-2', 'border-blue-600', 'font-bold');
+            link.classList.remove('text-slate-600', 'hover:text-slate-900', 'bg-sky-50/80');
         } else {
-            link.classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600', 'font-bold');
+            link.classList.remove('text-blue-700', 'border-b-2', 'border-blue-600', 'font-bold', 'bg-sky-50/80');
             link.classList.add('text-slate-600', 'hover:text-slate-900');
         }
     });

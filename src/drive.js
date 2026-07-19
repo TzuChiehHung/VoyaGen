@@ -265,7 +265,7 @@ async function renderDashboard() {
                     <div>
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <div class="flex items-center gap-2.5 min-w-0">
-                                <input type="checkbox" class="dashboard-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer shrink-0" data-file-id="${file.id}" onchange="voyaDrive.onCheckboxChange()">
+                                <input type="checkbox" class="dashboard-checkbox rounded border-slate-300 text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer shrink-0" data-file-id="${file.id}" onchange="voyaDrive.onCheckboxChange()">
                                 <h3 class="font-bold text-slate-800 text-base truncate" title="${file.name.replace('.json', '')}">${file.name.replace('.json', '')}</h3>
                             </div>
                         </div>
@@ -276,7 +276,7 @@ async function renderDashboard() {
                     </div>
 
                     <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
-                        <a href="${shareUrl}" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5">
+                        <a href="${shareUrl}" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-3 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1.5 shadow-sm">
                             <i class="fa-solid fa-eye text-[11px]"></i> 檢視行程
                         </a>
                         <button onclick="navigator.clipboard.writeText('${shareUrl}'); voyaDrive.showToast('已複製分享網址！', 'success');" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center gap-1" title="複製分享連結">
