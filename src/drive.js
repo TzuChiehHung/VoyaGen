@@ -105,24 +105,51 @@ async function listItineraries() {
     return files;
 }
 
-// 3. 將行程 JSON 儲存至 Google Drive 並設定為公開唯讀
-async function saveItineraryToDrive(fileName, itineraryData) {
+// 3. 將行程 JSON 儲存或更新至 Google Drive (同名檔案自動覆蓋，保持原有 File ID 與分享網址)
+async function saveItineraryToDrive(fileNameOrData, itineraryDataParam = null, existingFileId = null) {
     const token = voyaAuth.getAccessToken();
     if (!token) throw new Error('請先登入 Google 帳號才能儲存至雲端硬碟');
+
+    let itineraryData;
+    let fileName;
+
+    if (itineraryDataParam === null) {
+        itineraryData = fileNameOrData;
+        fileName = (itineraryData && itineraryData.meta && itineraryData.meta.title) ? itineraryData.meta.title : 'itinerary';
+    } else {
+        fileName = fileNameOrData;
+        itineraryData = itineraryDataParam;
+    }
 
     const folderId = await getOrCreateAppFolder();
     const safeFileName = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
 
-    // 建立 multipart 上傳主體
-    const metadata = {
-        name: safeFileName,
-        mimeType: 'application/json',
-        parents: [folderId]
-    };
+    // 檢查是否已有相同檔名的檔案
+    let targetFileId = existingFileId;
+    if (!targetFileId) {
+        const query = encodeURIComponent(`'${folderId}' in parents and name='${safeFileName}' and trashed=false`);
+        const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.files && searchData.files.length > 0) {
+                targetFileId = searchData.files[0].id;
+            }
+        }
+    }
 
     const boundary = '-------314159265358979323846';
     const delimiter = "\r\n--" + boundary + "\r\n";
     const close_delim = "\r\n--" + boundary + "--";
+
+    const metadata = {
+        name: safeFileName,
+        mimeType: 'application/json'
+    };
+    if (!targetFileId) {
+        metadata.parents = [folderId];
+    }
 
     const multipartRequestBody =
         delimiter +
@@ -133,8 +160,16 @@ async function saveItineraryToDrive(fileName, itineraryData) {
         (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData, null, 2)) +
         close_delim;
 
-    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
-        method: 'POST',
+    let uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
+    let method = 'POST';
+
+    if (targetFileId) {
+        uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${targetFileId}?uploadType=multipart&fields=id,name,webViewLink`;
+        method = 'PATCH';
+    }
+
+    const uploadRes = await fetch(uploadUrl, {
+        method: method,
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': `multipart/related; boundary="${boundary}"`
@@ -142,22 +177,11 @@ async function saveItineraryToDrive(fileName, itineraryData) {
         body: multipartRequestBody
     });
 
-    if (!uploadRes.ok) throw new Error(`上傳檔案失敗: ${uploadRes.status}`);
+    if (!uploadRes.ok) throw new Error(`儲存檔案失敗: ${uploadRes.status}`);
     const file = await uploadRes.json();
 
-    // 修改檔案權限為「公開唯讀 (anyone reader)」
-    const permUrl = `https://www.googleapis.com/drive/v3/files/${file.id}/permissions`;
-    await fetch(permUrl, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            role: 'reader',
-            type: 'anyone'
-        })
-    });
+    // 確保權限設為「公開唯讀 (anyone reader)」
+    await makeFilePublic(file.id, token);
 
     // 直連下載/讀取網址
     const directUrl = `https://drive.google.com/uc?export=download&id=${file.id}`;
@@ -266,11 +290,18 @@ async function renderDashboard() {
 
     } catch (err) {
         console.error('載入儀表板失敗:', err);
+        const isAuthError = err.message.includes('401') || err.message.includes('403');
         container.innerHTML = `
-            <div class="border border-rose-100 bg-rose-50 rounded-2xl p-6 text-center text-rose-600 col-span-full text-xs">
-                <i class="fa-solid fa-circle-exclamation text-xl mb-2 block"></i>
-                讀取雲端資料夾失敗：${err.message}<br>
-                <span class="text-slate-400 mt-1 block">請確認您的權限或嘗試重新登入。</span>
+            <div class="border-2 border-dashed ${isAuthError ? 'border-rose-200 bg-rose-50/50' : 'border-slate-200 bg-white'} rounded-2xl p-8 text-center col-span-full">
+                <div class="w-12 h-12 rounded-full ${isAuthError ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center mx-auto mb-3 text-lg">
+                    <i class="fa-solid ${isAuthError ? 'fa-lock' : 'fa-circle-exclamation'}"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1">${isAuthError ? 'Google Drive 授權已過期或失效' : '讀取雲端資料夾失敗'}</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">${isAuthError ? '請點擊下方按鈕重新完成 Google 帳號授權連線。' : err.message}</p>
+                <button onclick="voyaAuth.login()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm">
+                    <svg class="w-4 h-4 inline-block mr-1.5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    重新連結 Google 帳號
+                </button>
             </div>
         `;
     }

@@ -28,9 +28,8 @@ function normalizeDataUrl(url) {
     return trimmedUrl;
 }
 
-// 支援 Node.js 單元測試與瀏覽器全域載入
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { normalizeDataUrl };
+if (typeof globalThis !== 'undefined') {
+    globalThis.normalizeDataUrl = normalizeDataUrl;
 }
 if (typeof window !== 'undefined') {
     window.normalizeDataUrl = normalizeDataUrl;

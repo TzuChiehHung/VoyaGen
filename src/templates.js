@@ -32,17 +32,19 @@ function renderItemHtml(item, colorTheme = '') {
     }
     
     let bulletHtml = "";
-    if (item.bullets && item.bullets.length > 0) {
+    const bullets = item.bullets || [];
+    if (bullets.length > 0) {
         bulletHtml = `
             <ul class="bullet-list text-slate-600 text-sm mt-1">
-                ${item.bullets.map(b => `<li>${b}</li>`).join("")}
+                ${bullets.map(b => `<li>${b}</li>`).join("")}
             </ul>
         `;
     }
     
     let notesHtml = "";
-    if (item.notes && item.notes.length > 0) {
-        notesHtml = item.notes.map(note => {
+    const notes = item.notes || [];
+    if (notes.length > 0) {
+        notesHtml = notes.map(note => {
             // 所有 note 全部跟隨主題色：主 timeline 用 CSS 變數，split track 用 note-box-{colorTheme}
             const noteClass = (colorTheme && colorTheme !== 'amber') ? `note-box-${colorTheme}` : "";
             const iconClass = note.icon || "fa-solid fa-lightbulb";
@@ -65,9 +67,9 @@ function renderItemHtml(item, colorTheme = '') {
     return `
         <div class="${[baseClass, classes].filter(Boolean).join(' ')}">
             <div class="${dotClass}"></div>
-            <div class="text-amber-600 font-bold text-sm mb-1 tracking-wider font-mono">${item.time}</div>
+            <div class="text-amber-600 font-bold text-sm mb-1 tracking-wider font-mono">${item.time || ''}</div>
             <h3 class="text-lg font-bold text-slate-800 mb-1 leading-snug">
-                ${item.title}
+                ${item.title || ''}
                 ${mapHtml}
             </h3>
             ${descHtml}
@@ -80,19 +82,21 @@ function renderItemHtml(item, colorTheme = '') {
 // 渲染雙軌分流區塊
 function renderSplitHtml(item) {
     const colClass = "px-4 py-4 md:first:border-r md:first:border-slate-100";
+    const tracks = item.tracks || [];
     
-    const tracksHtml = item.tracks.map(track => {
+    const tracksHtml = tracks.map(track => {
         const theme = track.color_theme || '';
         const badgeClass = `split-badge-${(theme && theme !== 'amber') ? theme : 'theme'}`;
         const badgeIcon = track.icon || 'fa-solid fa-star';
+        const items = track.items || [];
         
         return `
             <div class="${colClass}">
                 <div class="inline-flex items-center ${badgeClass} border text-xs font-bold px-3 py-1.5 rounded-md mb-5 shadow-sm">
-                    <i class="${badgeIcon} mr-1.5"></i>${track.track_name}
+                    <i class="${badgeIcon} mr-1.5"></i>${track.track_name || ''}
                 </div>
                 <div class="pt-2">
-                    ${track.items.map(subItem => renderItemHtml(subItem, theme)).join("")}
+                    ${items.map(subItem => renderItemHtml(subItem, theme)).join("")}
                 </div>
             </div>
         `;

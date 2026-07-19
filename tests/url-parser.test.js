@@ -1,5 +1,7 @@
-import { normalizeDataUrl } from '../src/url-parser.js';
+import '../src/url-parser.js';
 import assert from 'assert';
+
+const normalizeDataUrl = globalThis.normalizeDataUrl;
 
 console.log('🧪 測試 normalizeDataUrl 網址轉址邏輯...\n');
 

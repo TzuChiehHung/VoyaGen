@@ -105,27 +105,50 @@
             </div>
         </div>
 
-        <!-- View 2: Generator (AI 行程生成器) -->
+        <!-- View 2: Generator (AI 行程生成器 & 微調器) -->
         <div id="view-generator" class="app-view max-w-5xl mx-auto px-4 py-8 hidden">
-            <div class="mb-8">
-                <h2 class="text-2xl font-black text-slate-900 tracking-tight">AI 旅遊行程生成器</h2>
-                <p class="text-sm text-slate-500 mt-1">輸入您的旅遊靈感與需求，由 Gemini AI 自動為您打造精美時間軸</p>
+            <div class="mb-8 text-center max-w-xl mx-auto">
+                <span id="gen-mode-badge" class="inline-block px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-extrabold uppercase tracking-wider mb-2">全新 AI 生成</span>
+                <h2 id="gen-mode-title" class="text-2xl font-black text-slate-900 tracking-tight">規劃您的夢幻旅程</h2>
+                <p id="gen-mode-desc" class="text-sm text-slate-500 mt-1">填寫目的地與偏好，Gemini 2.5 Flash 將秒級為您規劃完美行程。</p>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8 max-w-2xl mx-auto">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">旅遊目的地與天數</label>
-                        <input type="text" placeholder="例如：2026 釜山與巨濟島 5 天 4 夜探險" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
+                <form onsubmit="event.preventDefault(); voyaGenerator.generateItineraryWithAI();" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">旅遊目的地 / 標題</label>
+                            <input type="text" id="gen-destination" placeholder="例如：2026 日本京都大阪 5天4夜深度之旅" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">預計天數 <span class="text-slate-400 font-normal lowercase">(選填)</span></label>
+                            <input type="number" id="gen-days" min="1" max="30" placeholder="預設由 AI 判斷" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                        </div>
                     </div>
+
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">行程偏好或草稿細節</label>
-                        <textarea rows="4" placeholder="例如：想去西面吃烤肉、海雲台搭膠囊列車、廣安里看無人機秀，請安排流暢路線..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">視覺主題風格</label>
+                        <select id="gen-theme" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium bg-white">
+                            <option value="auto" selected>🎨 AI 專屬客製配色</option>
+                            <option value="indigo">湛藍極簡 (Classic Indigo)</option>
+                            <option value="emerald">自然翡翠 (Fresh Emerald)</option>
+                            <option value="amber">日落暖橘 (Warm Amber)</option>
+                            <option value="rose">浪漫櫻粉 (Romantic Rose)</option>
+                            <option value="slate">摩登黑灰 (Modern Slate)</option>
+                        </select>
                     </div>
-                    <button class="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> 開始生成精美行程 (Step 3 實作)
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">行程偏好 / 景點草稿 / AI 微調要求</label>
+                        <textarea id="gen-draft" rows="5" placeholder="例如：想去西面吃烤肉、海雲台搭膠囊列車、廣安里看無人機秀，請安排流暢路線..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                    </div>
+
+                    <button type="submit" id="gen-submit-btn" class="w-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 text-base">
+                        <i id="gen-spinner" class="fa-solid fa-spinner fa-spin hidden text-lg"></i>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span id="gen-submit-text">開始 AI 智慧生成</span>
                     </button>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -179,7 +202,13 @@
                             <span id="trip-divider" class="hidden md:inline opacity-40">|</span>
                             <span id="trip-route"></span>
                         </p>
-                        <span id="trip-update" class="text-xs font-normal tracking-wide opacity-50">最後更新：--</span>
+                        <div class="flex items-center gap-3">
+                            <button onclick="if(window.getItineraryData && window.getItineraryData()){ voyaGenerator.initGeneratorView(window.getItineraryData()); navigateTo('generator'); }" class="bg-white/15 hover:bg-white/25 text-white border border-white/30 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all backdrop-blur-sm flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                                <span>用 AI 微調此行程</span>
+                            </button>
+                            <span id="trip-update" class="text-xs font-normal tracking-wide opacity-50">最後更新：--</span>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -226,6 +255,7 @@
     <script src="src/url-parser.js"></script>
     <script src="src/auth.js"></script>
     <script src="src/drive.js"></script>
+    <script src="src/generator.js"></script>
     <script src="src/router.js"></script>
     <script src="src/templates.js"></script>
     <script src="src/render.js"></script>

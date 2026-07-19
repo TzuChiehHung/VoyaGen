@@ -12,7 +12,7 @@ const SCOPES = [
     'profile',
     'email',
     'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/cloud-platform'
+    'https://www.googleapis.com/auth/generative-language.retriever'
 ].join(' ');
 
 let tokenClient = null;
@@ -226,6 +226,14 @@ function updateAuthUI() {
             loginCardAuth.classList.add('hidden');
         }
     }
+
+    // 若目前在 Dashboard 畫面，同步刷新 Dashboard 列表
+    const dashboardView = document.getElementById('view-dashboard');
+    if (dashboardView && !dashboardView.classList.contains('hidden')) {
+        if (typeof window.voyaDrive !== 'undefined' && typeof window.voyaDrive.renderDashboard === 'function') {
+            window.voyaDrive.renderDashboard();
+        }
+    }
 }
 
 // 點擊選單外部自動關閉下拉選單
@@ -241,7 +249,9 @@ document.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     updateAuthUI();
     // 延遲等 GSI SDK 加載
-    setTimeout(initTokenClient, 500);
+    setTimeout(() => {
+        initTokenClient();
+    }, 500);
 });
 
 // 暴露全域 API

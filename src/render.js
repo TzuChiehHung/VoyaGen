@@ -103,14 +103,16 @@ function switchDay(dayNum) {
     const dayContentArea = document.getElementById('day-content-area');
     if (!dayContentArea || !itineraryData) return;
     
-    const dayData = itineraryData.days.find(d => d.day_number === dayNum);
+    const days = itineraryData.days || [];
+    const dayData = days.find(d => d.day_number === dayNum);
     if (!dayData) {
         dayContentArea.innerHTML = `<div class="p-8 bg-rose-50 text-rose-600 rounded-xl font-bold text-center">找不到 Day ${dayNum} 行程內容</div>`;
         return;
     }
     
     // 渲染 Day Header & Timeline HTML
-    let timelineHtml = dayData.timeline.map(item => {
+    const timeline = dayData.timeline || dayData.items || dayData.activities || [];
+    let timelineHtml = timeline.map(item => {
         if (item.type === "split") {
             return renderSplitHtml(item);
         } else {
@@ -241,8 +243,17 @@ async function init(forceReload = false) {
         }
         currentLoadedUrl = dataUrl;
         
+        // 相容性拆包檢查 (適應不同 AI 輸出的根物件包裹結構)
+        if (itineraryData && !itineraryData.days && itineraryData.itinerary?.days) {
+            itineraryData = itineraryData.itinerary;
+        } else if (itineraryData && !itineraryData.days && itineraryData.data?.days) {
+            itineraryData = itineraryData.data;
+        }
+        itineraryData.meta = itineraryData.meta || {};
+        itineraryData.days = itineraryData.days || [];
+
         // 1. 初始化 Meta 與主題
-        document.title = itineraryData.meta.title;
+        document.title = itineraryData.meta.title || "VoyaGen 旅遊行程";
         const titleEl = document.getElementById('trip-title');
         if (titleEl) {
             const titleText = itineraryData.meta.title || "";
@@ -259,7 +270,7 @@ async function init(forceReload = false) {
             }
         }
         document.getElementById('trip-subtitle').innerText = `✦ ${itineraryData.meta.subtitle || '旅遊行程'} ✦`;
-        document.getElementById('trip-date').innerText = itineraryData.meta.date_range;
+        document.getElementById('trip-date').innerText = itineraryData.meta.date_range || '';
         
         const routeEl = document.getElementById('trip-route');
         const dividerEl = document.getElementById('trip-divider');
@@ -281,10 +292,11 @@ async function init(forceReload = false) {
         // 2. 初始化側邊欄
         const sidebar = document.getElementById('day-sidebar');
         if (sidebar) {
-            sidebar.innerHTML = itineraryData.days.map(day => `
+            const daysList = itineraryData.days || [];
+            sidebar.innerHTML = daysList.map(day => `
                 <button onclick="switchDay(${day.day_number})" id="btn-day${day.day_number}" class="day-btn flex-shrink-0 text-left px-4 py-3 rounded-xl border border-slate-100 font-medium text-slate-600 hover:bg-slate-50 transition-all">
                     Day ${day.day_number}
-                    <span class="block text-xs font-normal opacity-80 mt-0.5">${day.day_title}</span>
+                    <span class="block text-xs font-normal opacity-80 mt-0.5">${day.day_title || ''}</span>
                 </button>
             `).join("");
         }
@@ -319,3 +331,8 @@ async function init(forceReload = false) {
 // 頁面加載完成後執行
 document.addEventListener('DOMContentLoaded', init);
 window.initItineraryView = init;
+window.getItineraryData = () => itineraryData;
+window.renderItineraryData = (data) => {
+    itineraryData = data;
+    renderItinerary();
+};

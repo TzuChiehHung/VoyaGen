@@ -36,6 +36,11 @@ function navigateTo(routeName) {
         window.voyaDrive.renderDashboard();
     }
 
+    // 若切換至 generator，初始化 AI 生成器
+    if (targetRoute === 'generator' && typeof window.voyaGenerator !== 'undefined' && typeof window.voyaGenerator.initGeneratorView === 'function') {
+        window.voyaGenerator.initGeneratorView();
+    }
+
     // 若切換至 viewer，觸發 行程載入
     if (targetRoute === 'viewer' && typeof window.initItineraryView === 'function') {
         window.initItineraryView();
