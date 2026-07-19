@@ -1,12 +1,13 @@
 {
-  "name": "travel-itinerary-generator",
+  "name": "voyagen",
   "version": "1.0.0",
   "type": "module",
-  "description": "Travel Itinerary Generator and Template Renderer",
+  "description": "VoyaGen - AI Powered Travel Itinerary Generator & Shareable Web App",
   "main": "src/render.js",
   "scripts": {
     "validate": "node scripts/validate-schema.js",
-    "test": "npm run validate"
+    "test:url": "node tests/url-parser.test.js",
+    "test": "npm run test:url && npm run validate"
   },
   "keywords": [
     "travel",

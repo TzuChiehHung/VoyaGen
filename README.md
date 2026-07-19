@@ -1,6 +1,6 @@
-# 旅遊行程展示器 Travel Itinerary Generator
+# VoyaGen - 旅遊行程 AI 產生器 (Travel Itinerary Generator)
 
-一個純前端、零伺服器費用的旅遊行程展示工具。透過 JSON 資料檔描述行程，部署至 GitHub Pages 後，搭配存放在 Google Drive 的個人行程資料，即可產出精美的分享連結。
+一個結合 AI 行程生成、Google Drive 雲端儲存與零伺服器費用的網頁旅遊行程展示 App。透過 JSON 資料檔描述行程，部署至 GitHub Pages 搭配存放在 Google Drive 的個人行程資料，產出精美的分享連結。
 
 ## ✨ 功能特色
 

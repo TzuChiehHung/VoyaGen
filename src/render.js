@@ -153,7 +153,8 @@ window.toggleTransfers = toggleTransfers;
 
 // 從 URL 載入資料並初始化網頁
 async function init() {
-    const dataUrl = getQueryParam('data') || 'templates/itinerary.json';
+    const rawDataUrl = getQueryParam('data') || 'templates/itinerary.json';
+    const dataUrl = (typeof normalizeDataUrl === 'function') ? normalizeDataUrl(rawDataUrl) : rawDataUrl;
     const dayContentArea = document.getElementById('day-content-area');
     
     try {
