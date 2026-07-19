@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoyaGen - 旅遊行程 AI 產生器</title>
     
-    <!-- Chrome Tab Icon (Favicon) - 統一地球與紙飛機圖示 -->
+    <!-- Chrome Tab Icon (Favicon) -->
     <link rel="icon" type="image/svg+xml" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%234f46e5'/><path d='M16 2 A14 14 0 0 0 2 16 A14 14 0 0 0 16 30 A14 14 0 0 0 30 16 A14 14 0 0 0 16 2 Z' fill='none' stroke='white' stroke-width='1.5' opacity='0.3'/><path d='M16 2 Q22 16 16 30 Q10 16 16 2' fill='none' stroke='white' stroke-width='1.5' opacity='0.4'/><path d='M2 16 H30' fill='none' stroke='white' stroke-width='1.5' opacity='0.4'/><path d='M12 18 L24 8 L20 22 L16 19 L12 18 Z M16 19 L24 8 L12 18 Z' fill='white'/></svg>">
 
     <!-- Tailwind CSS -->
@@ -17,66 +17,171 @@
     <!-- Core CSS -->
     <link rel="stylesheet" href="assets/css/theme.css">
 </head>
-<body class="bg-slate-50 text-slate-700 min-h-screen">
+<body class="bg-slate-50 text-slate-700 min-h-screen flex flex-col">
 
-    <!-- Hero Section -->
-    <header id="hero-section" class="bg-gradient-to-r from-slate-900 via-indigo-900 to-emerald-900 text-white shadow-lg relative overflow-hidden transition-all duration-500">
-        <div class="absolute top-4 left-10 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
-        <div class="absolute top-10 right-20 w-4 h-4 bg-white/30 rounded-full blur-sm"></div>
-        <div class="absolute bottom-8 left-1/4 w-2 h-2 bg-white/20 rounded-full blur-sm"></div>
-        
-        <div class="max-w-5xl mx-auto px-4 py-10 relative z-10 text-center md:text-left">
-            <p id="trip-subtitle" class="font-bold tracking-widest text-sm md:text-base mb-2">✦ 旅遊行程 ✦</p>
-            <h1 id="trip-title" class="text-3xl md:text-5xl font-black mb-4 tracking-wide leading-tight">加載中...</h1>
-            <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 mt-4">
-                <p class="text-base md:text-lg font-medium opacity-90 flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 md:gap-4">
-                    <span id="trip-date" class="bg-white/10 border border-white/20 px-3 py-1 rounded-full text-sm shadow-sm backdrop-blur-sm">--/-- - --/--</span>
-                    <span id="trip-divider" class="hidden md:inline opacity-40">|</span>
-                    <span id="trip-route"></span>
-                </p>
-                <span id="trip-update" class="text-xs font-normal tracking-wide opacity-50">最後更新：--</span>
+    <!-- App Header & Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16">
+            <!-- Brand Logo -->
+            <a href="#dashboard" onclick="navigateTo('dashboard')" class="flex items-center gap-2 font-black text-xl text-indigo-900 tracking-tight hover:opacity-90 transition-opacity">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </div>
+                <span>VoyaGen</span>
+            </a>
+
+            <!-- Navigation Links -->
+            <div class="flex items-center gap-1 md:gap-3 text-sm font-medium">
+                <button onclick="navigateTo('dashboard')" data-route="dashboard" class="nav-link px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-compass"></i>
+                    <span class="hidden sm:inline">我的行程庫</span>
+                </button>
+                <button onclick="navigateTo('generator')" data-route="generator" class="nav-link px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i>
+                    <span class="hidden sm:inline">AI 生成器</span>
+                </button>
+                <button onclick="navigateTo('viewer')" data-route="viewer" class="nav-link px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i>
+                    <span class="hidden sm:inline">行程預覽</span>
+                </button>
+                <button onclick="navigateTo('login')" data-route="login" class="nav-link px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all flex items-center gap-2 ml-2 border border-slate-200">
+                    <i class="fa-brands fa-google text-rose-500"></i>
+                    <span id="nav-user-label">登入</span>
+                </button>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Main Container -->
-    <main class="max-w-5xl mx-auto px-4 py-8">
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- Day Selector Sidebar -->
-            <div class="md:w-1/4">
-                <div id="day-sidebar" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 md:sticky md:top-6 flex md:flex-col overflow-x-auto hide-scrollbar gap-1">
-                    <!-- Day buttons will be dynamically injected here -->
-                    <div class="py-4 text-center text-slate-400 w-full">
-                        <i class="fa-solid fa-circle-notch fa-spin"></i>
-                    </div>
+    <!-- App Views Container -->
+    <div id="app-container" class="flex-1">
+
+        <!-- View 1: Dashboard (我的行程庫) -->
+        <div id="view-dashboard" class="app-view max-w-5xl mx-auto px-4 py-8">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight">我的行程庫</h2>
+                    <p class="text-sm text-slate-500 mt-1">管理您儲存在 Google Drive 中的專屬行程 JSON</p>
                 </div>
+                <button onclick="navigateTo('generator')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> 新增 AI 行程
+                </button>
             </div>
 
-            <!-- Timeline Content Box -->
-            <div class="md:w-3/4 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-                
-                <!-- Toggle Switch for Transfers -->
-                <div class="flex justify-end mb-4 border-b border-slate-100 pb-4">
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="transfer-toggle" class="sr-only peer">
-                        <div class="relative w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        <span class="ms-3 text-sm font-medium text-slate-600 select-none">顯示交通與車程時間</span>
-                    </label>
-                </div>
-
-                <!-- Timeline Inject Point -->
-                <div id="day-content-area" class="relative">
-                    <div class="text-center py-20 text-slate-400">
-                        <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+            <div id="dashboard-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dashboard items placeholder -->
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-white/50">
+                    <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-lg">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">尚未連結 Google Drive 帳號</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">登入 Google 帳號授權後，系統將為您建立專屬行程雲端資料夾，並列出所有行程。</p>
+                    <button onclick="navigateTo('login')" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all">
+                        立即登入 Google 帳號
+                    </button>
                 </div>
-
             </div>
         </div>
-    </main>
 
-    <!-- Core Script -->
+        <!-- View 2: Generator (AI 行程生成器) -->
+        <div id="view-generator" class="app-view max-w-5xl mx-auto px-4 py-8 hidden">
+            <div class="mb-8">
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">AI 旅遊行程生成器</h2>
+                <p class="text-sm text-slate-500 mt-1">輸入您的旅遊靈感與需求，由 Gemini AI 自動為您打造精美時間軸</p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8 max-w-2xl mx-auto">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">旅遊目的地與天數</label>
+                        <input type="text" placeholder="例如：2026 釜山與巨濟島 5 天 4 夜探險" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">行程偏好或草稿細節</label>
+                        <textarea rows="4" placeholder="例如：想去西面吃烤肉、海雲台搭膠囊列車、廣安里看無人機秀，請安排流暢路線..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-indigo-600 to-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 開始生成精美行程 (Step 3 實作)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 3: Login (Google 登入) -->
+        <div id="view-login" class="app-view max-w-5xl mx-auto px-4 py-16 hidden">
+            <div class="max-w-md mx-auto bg-white rounded-2xl border border-slate-100 shadow-md p-8 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto mb-4 shadow-lg text-2xl">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 mb-2">歡迎使用 VoyaGen</h2>
+                <p class="text-sm text-slate-500 mb-6">登入 Google 帳號以直接存取您的 Google Drive 專屬行程檔並使用 Gemini AI 生成功能</p>
+                <div id="gsi-button-container" class="flex justify-center mb-4">
+                    <button class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold px-6 py-3 rounded-xl shadow-sm transition-all flex items-center gap-3">
+                        <i class="fa-brands fa-google text-rose-500 text-lg"></i>
+                        <span>使用 Google 帳號登入 (Step 2 實作)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 4: Viewer (行程展示器 - 現有頁面) -->
+        <div id="view-viewer" class="app-view hidden">
+            <!-- Hero Section -->
+            <header id="hero-section" class="bg-gradient-to-r from-slate-900 via-indigo-900 to-emerald-900 text-white shadow-lg relative overflow-hidden transition-all duration-500">
+                <div class="absolute top-4 left-10 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
+                <div class="absolute top-10 right-20 w-4 h-4 bg-white/30 rounded-full blur-sm"></div>
+                <div class="absolute bottom-8 left-1/4 w-2 h-2 bg-white/20 rounded-full blur-sm"></div>
+
+                <div class="max-w-5xl mx-auto px-4 py-10 relative z-10 text-center md:text-left">
+                    <p id="trip-subtitle" class="font-bold tracking-widest text-sm md:text-base mb-2">✦ 旅遊行程 ✦</p>
+                    <h1 id="trip-title" class="text-3xl md:text-5xl font-black mb-4 tracking-wide leading-tight">加載中...</h1>
+                    <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 mt-4">
+                        <p class="text-base md:text-lg font-medium opacity-90 flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 md:gap-4">
+                            <span id="trip-date" class="bg-white/10 border border-white/20 px-3 py-1 rounded-full text-sm shadow-sm backdrop-blur-sm">--/-- - --/--</span>
+                            <span id="trip-divider" class="hidden md:inline opacity-40">|</span>
+                            <span id="trip-route"></span>
+                        </p>
+                        <span id="trip-update" class="text-xs font-normal tracking-wide opacity-50">最後更新：--</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Container -->
+            <main class="max-w-5xl mx-auto px-4 py-8">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Day Selector Sidebar -->
+                    <div class="md:w-1/4">
+                        <div id="day-sidebar" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 md:sticky md:top-20 flex md:flex-col overflow-x-auto hide-scrollbar gap-1">
+                            <div class="py-4 text-center text-slate-400 w-full">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Content Box -->
+                    <div class="md:w-3/4 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+                        <div class="flex justify-end mb-4 border-b border-slate-100 pb-4">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="transfer-toggle" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                <span class="ms-3 text-sm font-medium text-slate-600 select-none">顯示交通與車程時間</span>
+                            </label>
+                        </div>
+
+                        <div id="day-content-area" class="relative">
+                            <div class="text-center py-20 text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Core Scripts -->
     <script src="src/url-parser.js"></script>
+    <script src="src/router.js"></script>
     <script src="src/templates.js"></script>
     <script src="src/render.js"></script>
 </body>
