@@ -422,6 +422,14 @@ async function init(forceReload = false) {
             toggleEl.addEventListener('change', toggleTransfers);
         }
 
+        // 3.5 綁定匯出 PDF 按鈕事件
+        const btnPdfToolbar = document.getElementById('btn-export-pdf-toolbar');
+        if (btnPdfToolbar) {
+            btnPdfToolbar.onclick = () => {
+                if (itineraryData) window.exportItineraryToPdf(itineraryData);
+            };
+        }
+
         // 4. 載入上次或預設 Day 1
         const savedDay = parseInt(localStorage.getItem('selectedDay')) || 1;
         // 確保 savedDay 在有效範圍內
@@ -498,4 +506,88 @@ window.renderItineraryData = (data) => {
     // 3. 載入 Day 1
     const startDay = itineraryData.days.length > 0 ? itineraryData.days[0].day_number : 1;
     switchDay(startDay);
+};
+
+// 核心匯出 PDF 列印邏輯 (支援單個與批次)
+window.exportItineraryToPdf = async function(itineraryOrList) {
+    const itineraries = Array.isArray(itineraryOrList) ? itineraryOrList : [itineraryOrList];
+    const printArea = document.getElementById('print-all-days-area');
+    if (!printArea) return;
+
+    // 儲存列印前的原始主題與網頁標題，以便列印後恢復
+    const originalTheme = (typeof itineraryData !== 'undefined' && itineraryData?.meta?.theme) ? itineraryData.meta.theme : null;
+    const originalTitle = document.title;
+
+    // 檢查是否需要隱藏交通段
+    const showTransfers = localStorage.getItem('showTransfers') !== 'false';
+    if (!showTransfers) {
+        document.body.classList.add('hide-transfers-print');
+    } else {
+        document.body.classList.remove('hide-transfers-print');
+    }
+
+    for (let i = 0; i < itineraries.length; i++) {
+        const itinerary = itineraries[i];
+        const meta = itinerary.meta || {};
+        const days = itinerary.days || [];
+
+        // 1. 動態套用此行程的主題色彩與網頁標題 (網頁標題會做為 PDF 導出的預設檔名)
+        if (typeof applyTheme === 'function') {
+            applyTheme(meta.theme || {});
+        }
+        document.title = meta.title || "VoyaGen 旅遊行程";
+
+        // 2. 渲染當前行程的完整天數 HTML 到列印區
+        let htmlContent = `
+            <div class="print-itinerary-section">
+                <div class="print-cover">
+                    <h1>${meta.title || "VoyaGen 旅遊行程"}</h1>
+                    <p>${meta.subtitle || "✦ 旅遊行程 ✦"}</p>
+                    <div class="flex items-center justify-center gap-4 text-sm mt-4 flex-wrap">
+                        <span><i class="fa-regular fa-calendar mr-1.5"></i>${meta.date_range || ""}</span>
+                        ${meta.route ? `<span class="opacity-50">|</span><span><i class="fa-solid fa-route mr-1.5"></i>${meta.route}</span>` : ""}
+                    </div>
+                </div>
+        `;
+
+        for (const day of days) {
+            const timeline = day.timeline || day.items || day.activities || [];
+            const timelineHtml = timeline.map(item => {
+                if (item.type === "split") {
+                    return renderSplitHtml(item);
+                } else {
+                    return renderItemHtml(item);
+                }
+            }).join("");
+
+            htmlContent += `
+                <div class="print-day-section">
+                    <div class="mb-6 border-b pb-4 border-slate-100">
+                        <div class="text-amber-600 font-bold text-sm tracking-widest font-mono uppercase mb-1">${day.date_label || `Day ${day.day_number}`}</div>
+                        <h2 class="text-2xl font-black text-indigo-900 tracking-tight">${day.day_title}</h2>
+                    </div>
+                    <div class="print-timeline-container relative pl-4 border-l-2">
+                        ${timelineHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        htmlContent += `</div>`;
+        printArea.innerHTML = htmlContent;
+
+        // 3. 呼叫列印 (瀏覽器會跳出列印視窗並阻擋執行)
+        window.print();
+        
+        // 稍微延遲以防有些瀏覽器在關閉後太快處理下一個
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // 4. 恢復原始網頁主題、網頁標題與交通段設定，並清空列印區
+    if (originalTheme && typeof applyTheme === 'function') {
+        applyTheme(originalTheme);
+    }
+    document.title = originalTitle;
+    document.body.classList.remove('hide-transfers-print');
+    printArea.innerHTML = '';
 };

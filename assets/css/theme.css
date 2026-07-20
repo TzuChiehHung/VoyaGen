@@ -233,6 +233,11 @@ body {
     box-shadow: 0 4px 12px -2px var(--color-milestone-shadow) !important; 
 }
 
+/* 自訂 Toggle 開關主題色 */
+#transfer-toggle:checked + .toggle-slider {
+    background-color: var(--color-accent-primary) !important;
+}
+
 /* details 手風琴元件 */
 details summary::-webkit-details-marker { display: none; }
 
@@ -356,3 +361,132 @@ details summary::-webkit-details-marker { display: none; }
 .timeline-item-sky     .text-amber-600 { color: #0ea5e9 !important; }
 .timeline-item-indigo  .text-amber-600 { color: #6366f1 !important; }
 .timeline-item-rose    .text-amber-600 { color: #f43f5e !important; }
+
+/* ==========================================================================
+   Print Layout Styles (@media print)
+   ========================================================================== */
+@media print {
+    /* 0. 啟用高保真色彩與漸層列印 */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    nav, 
+    #day-sidebar, 
+    #dashboard-batch-bar,
+    .no-print,
+    button,
+    input,
+    label,
+    #btn-export-pdf-toolbar,
+    #toast-container,
+    footer,
+    #login-card-not-auth,
+    #login-card-auth,
+    #dashboard-list,
+    .dashboard-header {
+        display: none !important;
+    }
+
+    /* 2. 確保列印區塊能顯示，且其他區塊隱藏 */
+    #print-all-days-area {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 30px 40px !important;
+        background-color: white !important;
+    }
+
+    /* 隱藏網頁原本的 wrapper 與內容，避免重疊 */
+    #view-viewer, 
+    #view-dashboard, 
+    #view-generator,
+    .container {
+        display: none !important;
+    }
+
+    /* 3. 列印基礎設定 */
+    body {
+        background-color: white !important;
+        font-size: 11pt;
+        line-height: 1.5;
+        font-family: 'Noto Sans TC', 'Outfit', sans-serif !important;
+    }
+
+    /* 4. 分頁控制 */
+    .print-itinerary-section {
+        page-break-after: always;
+        break-after: page;
+    }
+    
+    .print-day-section {
+        page-break-after: always;
+        break-after: page;
+        background-color: white !important;
+        border-radius: 24px !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 40px !important;
+        margin-bottom: 40px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* 避免時間軸項目在列印時被橫截 */
+    .timeline-item, 
+    .timeline-item-theme,
+    .timeline-item-rose, 
+    .timeline-item-emerald, 
+    .timeline-item-sky, 
+    .timeline-item-indigo,
+    .timeline-item-amber,
+    .timeline-item-transfer,
+    .note-box,
+    .milestone-highlight {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 5. 交通段隱藏覆蓋 */
+    body.hide-transfers-print .timeline-item-transfer {
+        display: none !important;
+    }
+
+    /* 6. 列印特定樣式調整 */
+    .print-cover {
+        background: linear-gradient(135deg, var(--color-hero-gradient-from) 0%, var(--color-hero-gradient-via) 50%, var(--color-hero-gradient-to) 100%) !important;
+        border-radius: 24px !important;
+        padding: 60px 40px !important;
+        color: white !important;
+        text-align: center !important;
+        margin-bottom: 40px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .print-cover h1 {
+        color: white !important;
+        font-size: 26pt !important;
+        font-weight: 900 !important;
+        margin-bottom: 12px !important;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .print-cover p {
+        color: var(--color-subtitle-text) !important;
+        font-size: 14pt !important;
+        font-weight: 500 !important;
+        margin-bottom: 16px !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .print-day-section:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* 確保時間軸在列印時線條清晰且使用主題色 */
+    .print-timeline-container {
+        border-left: 2px solid var(--color-timeline-border) !important;
+    }
+}

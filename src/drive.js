@@ -275,15 +275,21 @@ async function renderDashboard() {
                         </p>
                     </div>
 
-                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
-                        <a href="${shareUrl}" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-3 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1.5 shadow-sm">
-                            <i class="fa-solid fa-eye text-[11px]"></i> 檢視行程
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-1.5 flex-wrap">
+                        <a href="${shareUrl}" class="flex-grow bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-2.5 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1 shadow-sm">
+                            <i class="fa-solid fa-eye text-[10px]"></i> 檢視
                         </a>
-                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); voyaDrive.showToast('已複製分享網址！', 'success');" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition-all flex items-center gap-1" title="複製分享連結">
-                            <i class="fa-solid fa-share-nodes text-[11px]"></i> 分享
+                        <button onclick="voyaDrive.exportPdfFromDashboard('${file.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm animate-fade-in" title="匯出 PDF">
+                            <i class="fa-solid fa-file-pdf text-[12px]"></i>
                         </button>
-                        <button onclick="if(confirm('確定要將此行程移至垃圾桶嗎？')) voyaDrive.deleteItineraryFromDrive('${file.id}')" class="text-slate-400 hover:text-rose-500 p-2 text-xs transition-colors" title="刪除行程">
-                            <i class="fa-solid fa-trash-can"></i>
+                        <button onclick="voyaDrive.downloadJsonFromDashboard('${file.id}', '${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/80 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm animate-fade-in" title="下載 JSON">
+                            <i class="fa-solid fa-file-code text-[12px]"></i>
+                        </button>
+                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); voyaDrive.showToast('已複製分享網址！', 'success');" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm" title="複製分享連結">
+                            <i class="fa-solid fa-share-nodes text-[12px]"></i>
+                        </button>
+                        <button onclick="if(confirm('確定要將此行程移至垃圾桶嗎？')) voyaDrive.deleteItineraryFromDrive('${file.id}')" class="text-slate-400 hover:text-rose-500 p-2 transition-colors" title="刪除行程">
+                            <i class="fa-solid fa-trash-can text-[12px]"></i>
                         </button>
                     </div>
                 </div>
@@ -438,6 +444,174 @@ async function uploadLocalJsonFile(fileInput) {
     fileInput.value = ''; // 清空 input 方便重複選擇
 }
 
+// 下載單個 JSON 檔案至本地
+async function downloadJsonFromDashboard(fileId, fileName) {
+    const toast = showToast('正在下載行程 JSON 檔案...', 'info', 0);
+    try {
+        const token = voyaAuth.getAccessToken();
+        if (!token) throw new Error('請先登入 Google 帳號！');
+
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`下載失敗: ${res.status}`);
+        const data = await res.json();
+
+        // 觸發瀏覽器下載
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.remove();
+        showToast('🎉 行程 JSON 檔案下載成功！', 'success');
+    } catch (err) {
+        toast.remove();
+        console.error(err);
+        showToast(`下載失敗: ${err.message}`, 'error');
+    }
+}
+
+// 匯出單個 PDF
+async function exportPdfFromDashboard(fileId) {
+    const toast = showToast('正在下載行程內容以準備列印...', 'info', 0);
+    try {
+        const token = voyaAuth.getAccessToken();
+        if (!token) throw new Error('請先登入 Google 帳號！');
+
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`下載失敗: ${res.status}`);
+        const data = await res.json();
+
+        toast.remove();
+        if (typeof window.exportItineraryToPdf === 'function') {
+            await window.exportItineraryToPdf(data);
+        } else {
+            throw new Error('PDF 匯出模組尚未載入完成');
+        }
+    } catch (err) {
+        toast.remove();
+        console.error(err);
+        showToast(`PDF 匯出失敗: ${err.message}`, 'error');
+    }
+}
+
+// 批次下載所選 JSON
+async function downloadSelectedJson() {
+    const checkboxes = Array.from(document.querySelectorAll('.dashboard-checkbox:checked'));
+    if (checkboxes.length === 0) return;
+
+    const total = checkboxes.length;
+    const progressToast = showToast(`正在準備批次下載 ${total} 個行程...`, 'info', 0);
+
+    let successCount = 0;
+    for (let i = 0; i < total; i++) {
+        const cb = checkboxes[i];
+        const fileId = cb.getAttribute('data-file-id');
+        const card = cb.closest('.bg-white');
+        const titleEl = card ? card.querySelector('h3') : null;
+        const rawName = titleEl ? titleEl.innerText : 'itinerary';
+        const fileName = `${rawName}.json`;
+
+        if (progressToast) {
+            progressToast.querySelector('span').innerText = `[${i + 1}/${total}] 下載中：${fileName}...`;
+        }
+
+        try {
+            const token = voyaAuth.getAccessToken();
+            if (!token) throw new Error('未登入');
+
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            // 觸發下載
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            successCount++;
+            await new Promise(r => setTimeout(r, 300));
+        } catch (err) {
+            console.error(`下載 ${fileName} 失敗:`, err);
+            showToast(`下載 ${fileName} 失敗: ${err.message}`, 'error', 4000);
+        }
+    }
+
+    progressToast.remove();
+    if (successCount > 0) {
+        showToast(`🎉 成功完成 ${successCount}/${total} 個行程 JSON 下載！`, 'success');
+    }
+}
+
+// 批次匯出所選 PDF (每個行程彈出獨立 PDF 視窗)
+async function exportSelectedPdf() {
+    const checkboxes = Array.from(document.querySelectorAll('.dashboard-checkbox:checked'));
+    if (checkboxes.length === 0) return;
+
+    const total = checkboxes.length;
+    const progressToast = showToast(`正在準備批次匯出 ${total} 個行程 PDF...`, 'info', 0);
+
+    const itineraries = [];
+    
+    // 1. 批次下載所有檔案的內容
+    for (let i = 0; i < total; i++) {
+        const cb = checkboxes[i];
+        const fileId = cb.getAttribute('data-file-id');
+        const card = cb.closest('.bg-white');
+        const titleEl = card ? card.querySelector('h3') : null;
+        const rawName = titleEl ? titleEl.innerText : `itinerary-${i + 1}`;
+
+        if (progressToast) {
+            progressToast.querySelector('span').innerText = `[${i + 1}/${total}] 載入行程資料：${rawName}...`;
+        }
+
+        try {
+            const token = voyaAuth.getAccessToken();
+            if (!token) throw new Error('未登入');
+
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            itineraries.push(data);
+        } catch (err) {
+            console.error(`載入 ${rawName} 失敗:`, err);
+            showToast(`載入 ${rawName} 失敗: ${err.message}`, 'error', 4000);
+        }
+    }
+
+    progressToast.remove();
+
+    if (itineraries.length === 0) {
+        showToast('沒有成功載入任何行程，無法列印', 'error');
+        return;
+    }
+
+    // 2. 呼叫核心列印 (每個行程獨立彈出)
+    if (typeof window.exportItineraryToPdf === 'function') {
+        await window.exportItineraryToPdf(itineraries);
+    } else {
+        showToast('PDF 匯出模組尚未載入完成', 'error');
+    }
+}
+
 // 暴露全域 API
 window.voyaDrive = {
     getOrCreateAppFolder,
@@ -449,5 +623,9 @@ window.voyaDrive = {
     toggleSelectAll,
     uploadLocalJsonFile,
     renderDashboard,
-    showToast
+    showToast,
+    downloadJsonFromDashboard,
+    exportPdfFromDashboard,
+    downloadSelectedJson,
+    exportSelectedPdf
 };

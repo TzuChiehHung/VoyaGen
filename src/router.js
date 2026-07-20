@@ -31,6 +31,15 @@ function navigateTo(routeName) {
         }
     });
 
+    // 更新網頁標題
+    if (targetRoute === 'dashboard') {
+        document.title = "VoyaGen - 我的行程庫";
+    } else if (targetRoute === 'generator') {
+        document.title = "VoyaGen - AI 行程規劃";
+    } else if (targetRoute === 'login') {
+        document.title = "VoyaGen - 歡迎使用";
+    }
+
     // 若非行程檢視頁，重置為 VoyaGen 預設藍青主題
     if (targetRoute !== 'viewer' && typeof window.applyTheme === 'function') {
         window.applyTheme({
