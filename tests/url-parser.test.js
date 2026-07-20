@@ -9,12 +9,17 @@ const testCases = [
     {
         name: 'Google Drive file view 網址轉換',
         input: 'https://drive.google.com/file/d/1ABC123xyz_456-789/view?usp=sharing',
-        expected: 'https://drive.google.com/uc?export=download&id=1ABC123xyz_456-789'
+        expected: 'https://docs.google.com/uc?export=download&id=1ABC123xyz_456-789'
     },
     {
         name: 'Google Drive open id 網址轉換',
         input: 'https://drive.google.com/open?id=1ABC123xyz_456-789&authuser=0',
-        expected: 'https://drive.google.com/uc?export=download&id=1ABC123xyz_456-789'
+        expected: 'https://docs.google.com/uc?export=download&id=1ABC123xyz_456-789'
+    },
+    {
+        name: 'Google Docs file view 網址轉換',
+        input: 'https://docs.google.com/file/d/1ABC123xyz_456-789/edit',
+        expected: 'https://docs.google.com/uc?export=download&id=1ABC123xyz_456-789'
     },
     {
         name: 'GitHub Blob 網址轉為 Raw 網址',

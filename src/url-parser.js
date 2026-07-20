@@ -8,14 +8,12 @@ function normalizeDataUrl(url) {
     
     const trimmedUrl = url.trim();
 
-    // 1. Google Drive 網址轉換 (file/d/, uc?export=download&id=, open?id=, lh3)
-    const gDriveMatch = trimmedUrl.match(/drive\.google\.com\/file\/d\/([^\/?#]+)/) ||
-                        trimmedUrl.match(/drive\.google\.com\/uc\?export=download&id=([^&#]+)/) ||
-                        trimmedUrl.match(/drive\.google\.com\/open\?id=([^&#]+)/) ||
-                        trimmedUrl.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/);
+    // 1. Google Drive 網址轉換 (file/d/, uc?export=download&id=, open?id=, lh3, docs.google.com)
+    const gDriveMatch = trimmedUrl.match(/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?id=|uc\?export=download&id=)([a-zA-Z0-9_-]+)/) ||
+                        trimmedUrl.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
 
     if (gDriveMatch && gDriveMatch[1]) {
-        return `https://drive.google.com/uc?export=download&id=${gDriveMatch[1]}`;
+        return `https://docs.google.com/uc?export=download&id=${gDriveMatch[1]}`;
     }
 
     // 2. GitHub Blob 網址轉換

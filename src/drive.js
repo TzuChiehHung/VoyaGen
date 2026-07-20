@@ -184,7 +184,7 @@ async function saveItineraryToDrive(fileNameOrData, itineraryDataParam = null, e
     await makeFilePublic(file.id, token);
 
     // 直連下載/讀取網址
-    const directUrl = `https://drive.google.com/uc?export=download&id=${file.id}`;
+    const directUrl = `https://docs.google.com/uc?export=download&id=${file.id}`;
     return {
         fileId: file.id,
         fileName: file.name,
@@ -256,7 +256,7 @@ async function renderDashboard() {
         }
 
         container.innerHTML = files.map(file => {
-            const fileDirectUrl = `https://drive.google.com/uc?export=download&id=${file.id}`;
+            const fileDirectUrl = `https://docs.google.com/uc?export=download&id=${file.id}`;
             const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodeURIComponent(fileDirectUrl)}`;
             const modifiedDate = new Date(file.modifiedTime).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
 

@@ -3,9 +3,8 @@
  * 處理 Google OAuth 2.0 授權 (Drive.file & Generative-Language Scopes)
  */
 
-// 預設 Client ID & API Key (優先讀取 localStorage，次之讀取 VOYA_CONFIG)
+// 預設 Client ID (優先讀取 localStorage，次之讀取 VOYA_CONFIG)
 let GOOGLE_CLIENT_ID = localStorage.getItem('voyagen_google_client_id') || (typeof VOYA_CONFIG !== 'undefined' ? VOYA_CONFIG.DEFAULT_CLIENT_ID : '');
-let GOOGLE_API_KEY = localStorage.getItem('voyagen_google_api_key') || (typeof VOYA_CONFIG !== 'undefined' ? VOYA_CONFIG.DEFAULT_API_KEY : '');
 
 const SCOPES = [
     'openid',
@@ -18,15 +17,7 @@ const SCOPES = [
 let tokenClient = null;
 let currentTokenResponse = null;
 
-// 設定與取得 API Key
-function setApiKey(newApiKey) {
-    GOOGLE_API_KEY = newApiKey.trim();
-    localStorage.setItem('voyagen_google_api_key', GOOGLE_API_KEY);
-}
 
-function getApiKey() {
-    return GOOGLE_API_KEY || localStorage.getItem('voyagen_google_api_key') || (typeof VOYA_CONFIG !== 'undefined' ? VOYA_CONFIG.DEFAULT_API_KEY : '');
-}
 
 // 設定並儲存 Client ID
 function setClientId(newClientId) {
@@ -195,10 +186,9 @@ function updateAuthUI() {
     const dropdownLoginBtn = document.getElementById('dropdown-login-btn');
     const dropdownLogoutBtn = document.getElementById('dropdown-logout-btn');
     const clientIdInput = document.getElementById('client-id-input');
-    const apiKeyInput = document.getElementById('api-key-input');
 
     if (clientIdInput) clientIdInput.value = GOOGLE_CLIENT_ID;
-    if (apiKeyInput) apiKeyInput.value = GOOGLE_API_KEY;
+
 
     if (navUserIcon) {
         if (loggedIn && profile?.picture) {
@@ -270,8 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // 暴露全域 API
 window.voyaAuth = {
     setClientId,
-    setApiKey,
-    getApiKey,
     login,
     logout,
     getAccessToken,

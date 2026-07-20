@@ -243,29 +243,29 @@ function applyTheme(theme) {
 // 切換天數
 function switchDay(dayNum) {
     localStorage.setItem('selectedDay', dayNum);
-    
+
     // 更新側邊欄 active 狀態
     document.querySelectorAll('.day-btn').forEach(btn => {
         btn.classList.remove('active');
         btn.classList.add('text-slate-600', 'border-slate-100', 'hover:bg-slate-50');
     });
-    
+
     const activeBtn = document.getElementById('btn-day' + dayNum);
     if (activeBtn) {
         activeBtn.classList.remove('text-slate-600', 'border-slate-100', 'hover:bg-slate-50');
         activeBtn.classList.add('active');
     }
-    
+
     const dayContentArea = document.getElementById('day-content-area');
     if (!dayContentArea || !itineraryData) return;
-    
+
     const days = itineraryData.days || [];
     const dayData = days.find(d => d.day_number === dayNum);
     if (!dayData) {
         dayContentArea.innerHTML = `<div class="p-8 bg-rose-50 text-rose-600 rounded-xl font-bold text-center">找不到 Day ${dayNum} 行程內容</div>`;
         return;
     }
-    
+
     // 渲染 Day Header & Timeline HTML
     const timeline = dayData.timeline || dayData.items || dayData.activities || [];
     let timelineHtml = timeline.map(item => {
@@ -275,22 +275,22 @@ function switchDay(dayNum) {
             return renderItemHtml(item);
         }
     }).join("");
-    
+
     const dayHeaderHtml = `
         <div class="mb-6 border-b pb-4 border-slate-100">
             <div class="text-amber-600 font-bold text-base tracking-widest font-mono uppercase mb-1.5">${dayData.date_label || `Day ${dayNum}`}</div>
             <h2 class="text-2xl font-black text-indigo-900 tracking-tight">${dayData.day_title}</h2>
         </div>
     `;
-    
+
     dayContentArea.innerHTML = `<div class="animate-fade-in">${dayHeaderHtml} ${timelineHtml}</div>`;
-    
+
     // 復原交通切換開關狀態
     const toggleEl = document.getElementById('transfer-toggle');
     if (toggleEl && localStorage.getItem('showTransfers') !== null) {
         toggleEl.checked = localStorage.getItem('showTransfers') === 'true';
     }
-    
+
     toggleTransfers();
 }
 window.switchDay = switchDay;
@@ -299,10 +299,10 @@ window.switchDay = switchDay;
 function toggleTransfers() {
     const toggleElement = document.getElementById('transfer-toggle');
     if (!toggleElement) return;
-    
+
     const isChecked = toggleElement.checked;
     localStorage.setItem('showTransfers', isChecked);
-    
+
     document.querySelectorAll('.timeline-item-transfer').forEach(el => {
         el.classList.toggle('hidden', !isChecked);
     });
@@ -320,85 +320,44 @@ async function init(forceReload = false) {
     if (!forceReload && currentLoadedUrl === dataUrl && itineraryData) {
         return; // 若已載入相同資料則跳過
     }
-    
+
     try {
         let headers = {};
         let finalUrl = dataUrl;
 
         // 提取 Google Drive File ID (包含 lh3, uc?export=, file/d/)
         const gDriveIdMatch = dataUrl.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/) ||
-                              dataUrl.match(/drive\.google\.com\/uc\?export=download&id=([^&]+)/) ||
-                              dataUrl.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+            dataUrl.match(/(?:drive|docs)\.google\.com\/uc\?export=download&id=([^&]+)/) ||
+            dataUrl.match(/(?:drive|docs)\.google\.com\/file\/d\/([^/?#]+)/);
 
         const fileId = gDriveIdMatch ? gDriveIdMatch[1] : null;
         const token = (typeof voyaAuth !== 'undefined') ? voyaAuth.getAccessToken() : null;
-        const apiKey = (typeof voyaAuth !== 'undefined') ? voyaAuth.getApiKey() : null;
+        const gasProxyUrl = (typeof VOYA_CONFIG !== 'undefined' ? VOYA_CONFIG.GAS_PROXY_URL : '') || localStorage.getItem('voyagen_gas_proxy_url') || '';
 
-        // 若已登入且為 Google Drive 檔案，優先使用 Drive API + Bearer Token
-        if (fileId && token) {
-            finalUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-            headers['Authorization'] = `Bearer ${token}`;
-        } else if (fileId && apiKey) {
-            // 未登入但有設定 API Key，使用 Google 官方 Drive API (秒讀且原生開放 CORS)
-            finalUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
-        }
-
-        let response;
-        try {
-            response = await fetch(finalUrl, { headers });
-            if (!response.ok) throw new Error(`HTTP 錯誤: ${response.status}`);
-            itineraryData = await response.json();
-        } catch (fetchErr) {
-            // 未登入/跨域阻檔時，嘗試多重 CORS 代理通道
-            if (fileId) {
-                console.warn('直連受限，啟動多軌 CORS 代理備援通道...');
-                const targetUrl = `https://drive.google.com/uc?export=download&confirm=no_antivirus&id=${fileId}`;
-                let fetchedJson = null;
-
-                // 嘗試 1: AllOrigins JSON 包裹模式
-                try {
-                    const res1 = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-                    if (res1.ok) {
-                        const data1 = await res1.json();
-                        if (data1 && data1.contents) {
-                            fetchedJson = (typeof data1.contents === 'string') ? JSON.parse(data1.contents) : data1.contents;
-                        }
-                    }
-                } catch (e1) {
-                    console.warn('AllOrigins 代理通道失敗:', e1);
-                }
-
-                // 嘗試 2: Corsproxy.io 模式
-                if (!fetchedJson) {
-                    try {
-                        const res2 = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`);
-                        if (res2.ok) fetchedJson = await res2.json();
-                    } catch (e2) {
-                        console.warn('Corsproxy 代理通道失敗:', e2);
-                    }
-                }
-
-                // 嘗試 3: Thingproxy 模式
-                if (!fetchedJson) {
-                    try {
-                        const res3 = await fetch(`https://thingproxy.freeboard.io/fetch/${targetUrl}`);
-                        if (res3.ok) fetchedJson = await res3.json();
-                    } catch (e3) {
-                        console.warn('Thingproxy 代理通道失敗:', e3);
-                    }
-                }
-
-                if (fetchedJson) {
-                    itineraryData = fetchedJson;
-                } else {
-                    throw fetchErr;
-                }
+        if (fileId) {
+            if (token) {
+                // 若已登入且為 Google Drive 檔案，優先使用 Drive API + Bearer Token
+                finalUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+                headers['Authorization'] = `Bearer ${token}`;
+            } else if (gasProxyUrl) {
+                // 未登入，使用 GAS 中繼代理
+                finalUrl = `${gasProxyUrl}?id=${fileId}`;
             } else {
-                throw fetchErr;
+                throw new Error('未設定 GAS 中繼代理服務，無法在無金鑰/未登入狀態下讀取 Google Drive 公開行程。');
             }
         }
+
+        const response = await fetch(finalUrl, { headers });
+        if (!response.ok) throw new Error(`HTTP 錯誤: ${response.status}`);
+
+        itineraryData = await response.json();
+
+        if (itineraryData && itineraryData.error) {
+            throw new Error(`GAS 中繼代理錯誤: ${itineraryData.error}`);
+        }
+
         currentLoadedUrl = dataUrl;
-        
+
         // 相容性拆包檢查 (適應不同 AI 輸出的根物件包裹結構)
         if (itineraryData && !itineraryData.days && itineraryData.itinerary?.days) {
             itineraryData = itineraryData.itinerary;
@@ -427,7 +386,7 @@ async function init(forceReload = false) {
         }
         document.getElementById('trip-subtitle').innerText = `✦ ${itineraryData.meta.subtitle || '旅遊行程'} ✦`;
         document.getElementById('trip-date').innerText = itineraryData.meta.date_range || '';
-        
+
         const routeEl = document.getElementById('trip-route');
         const dividerEl = document.getElementById('trip-divider');
         if (routeEl) {
@@ -440,11 +399,11 @@ async function init(forceReload = false) {
                 if (dividerEl) dividerEl.classList.add('hidden');
             }
         }
-        
+
         document.getElementById('trip-update').innerText = `最後更新：${itineraryData.meta.last_updated || '無'}`;
-        
+
         applyTheme(itineraryData.meta.theme || {});
-        
+
         // 2. 初始化側邊欄
         const sidebar = document.getElementById('day-sidebar');
         if (sidebar) {
@@ -456,19 +415,19 @@ async function init(forceReload = false) {
                 </button>
             `).join("");
         }
-        
+
         // 3. 綁定開關事件
         const toggleEl = document.getElementById('transfer-toggle');
         if (toggleEl) {
             toggleEl.addEventListener('change', toggleTransfers);
         }
-        
+
         // 4. 載入上次或預設 Day 1
         const savedDay = parseInt(localStorage.getItem('selectedDay')) || 1;
         // 確保 savedDay 在有效範圍內
         const startDay = itineraryData.days.some(d => d.day_number === savedDay) ? savedDay : itineraryData.days[0].day_number;
         switchDay(startDay);
-        
+
     } catch (error) {
         console.error("載入行程失敗:", error);
         if (dayContentArea) {
