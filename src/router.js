@@ -40,12 +40,17 @@ function navigateTo(routeName) {
         document.title = "VoyaGen - 歡迎使用";
     }
 
-    // 若非行程檢視頁，重置為 VoyaGen 預設藍青主題
-    if (targetRoute !== 'viewer' && typeof window.applyTheme === 'function') {
-        window.applyTheme({
-            accent_primary: '#0284c7',
-            btn_gradient_from: '#0284c7'
-        });
+    // 若非行程檢視頁，關閉 AI 對話助理側邊欄並重置主題
+    if (targetRoute !== 'viewer') {
+        if (typeof window.toggleAiDrawer === 'function') {
+            window.toggleAiDrawer(false);
+        }
+        if (typeof window.applyTheme === 'function') {
+            window.applyTheme({
+                accent_primary: '#0284c7',
+                btn_gradient_from: '#0284c7'
+            });
+        }
     }
 
     // 若切換至 dashboard，觸發 Dashboard 讀取

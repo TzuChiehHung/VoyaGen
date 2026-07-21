@@ -1,100 +1,38 @@
 /**
- * VoyaGen AI 行程生成與微調模組
+ * VoyaGen AI 行程生成與對話微調模組
  * 負責直連 Gemini 3.5 Flash API、注入 Schema 規範、與存檔跳轉
  */
 
-let currentEditSourceData = null; // 若為微調模式，儲存被微調的原始行程 JSON
-
-// 將 JSON 字串值內的未轉義控制字元 (如換行 \n、Tab \t) 轉義或替換
-function sanitizeJsonControlChars(str) {
-    let inString = false;
-    let isEscaped = false;
-    let result = '';
-
-    for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        if (inString) {
-            if (isEscaped) {
-                result += char;
-                isEscaped = false;
-            } else if (char === '\\') {
-                result += char;
-                isEscaped = true;
-            } else if (char === '"') {
-                result += char;
-                inString = false;
-            } else if (char === '\n') {
-                result += '\\n';
-            } else if (char === '\r') {
-                result += '\\r';
-            } else if (char === '\t') {
-                result += '\\t';
-            } else {
-                const code = char.charCodeAt(0);
-                if (code < 32) {
-                    result += ' ';
-                } else {
-                    result += char;
-                }
-            }
-        } else {
-            if (char === '"') {
-                inString = true;
-            }
-            result += char;
-        }
-    }
-    return result;
-}
+let currentEditSourceData = null; // 若為微調模式，儲存被微調的原始行程資料
 
 /**
- * 容錯 JSON 解析函式 (自動清理 Markdown 標籤、控制字元、尾隨逗號與多餘文字)
+ * 智慧容錯解析函式 (結合 voyaYaml)
  */
-function cleanAndParseJson(rawText) {
+function cleanAndParseContent(rawText) {
     if (!rawText) throw new Error('未取得有效內容');
 
-    // 1. 清理 Markdown Code Block 標籤
-    let text = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-    // 2. 嘗試直接解析
-    try {
-        return JSON.parse(text);
-    } catch (e1) {
-        // 3. 容錯處理：自動修復控制字元 (如未轉義換行/Tab) 與尾隨逗號
-        try {
-            const sanitized = sanitizeJsonControlChars(text)
-                .replace(/,\s*([\]}])/g, '$1')
-                .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
-            return JSON.parse(sanitized);
-        } catch (e2) {
-            // 4. 擷取 JSON 物件主體 ({ ... }) 再度嘗試
-            const firstBrace = text.indexOf('{');
-            const lastBrace = text.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                const subText = sanitizeJsonControlChars(text.substring(firstBrace, lastBrace + 1))
-                    .replace(/,\s*([\]}])/g, '$1');
-                return JSON.parse(subText);
-            }
-            throw e1;
-        }
+    if (window.voyaYaml && typeof window.voyaYaml.parseYamlOrJson === 'function') {
+        return window.voyaYaml.parseYamlOrJson(rawText);
     }
+
+    let text = rawText.replace(/```(json|yaml)?/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(text);
 }
 
 /**
- * 確保生成的 JSON 結構符合 ItinerarySchema 規範 (schema.json)
+ * 確保生成的 JSON/YAML 結構符合規範
  */
-function normalizeItinerarySchema(json) {
-    if (!json || typeof json !== 'object') json = {};
-    if (!json.meta || typeof json.meta !== 'object') json.meta = {};
-    if (!json.meta.title) json.meta.title = 'AI 智慧旅遊行程';
-    if (!json.meta.date_range) json.meta.date_range = '2026';
-    if (!Array.isArray(json.days)) json.days = [];
-    return json;
+function normalizeItinerarySchema(data) {
+    if (!data || typeof data !== 'object') data = {};
+    if (!data.meta || typeof data.meta !== 'object') data.meta = {};
+    if (!data.meta.title) data.meta.title = 'AI 智慧旅遊行程';
+    if (!data.meta.date_range) data.meta.date_range = '2026';
+    if (!Array.isArray(data.days)) data.days = [];
+    return data;
 }
 
 /**
  * 初始化 AI 生成器視圖
- * @param {Object} sourceData - 選擇性傳入現有行程 JSON 以開啟 AI 微調模式
  */
 function initGeneratorView(sourceData = null) {
     currentEditSourceData = sourceData;
@@ -130,22 +68,16 @@ function initGeneratorView(sourceData = null) {
         if (daysInput) daysInput.value = '';
         if (themeSelect) themeSelect.value = 'auto';
         if (draftInput) draftInput.value = '';
-        const apiKeyInput = document.getElementById('gen-user-api-key');
-        if (apiKeyInput) {
-            apiKeyInput.value = localStorage.getItem('voyagen_user_gemini_key') || '';
-        }
     }
 }
 
 /**
- * 核心函式：呼叫 Gemini 2.5 Flash API 生成或編修行程
+ * 核心函式：呼叫 Gemini 3.5 Flash API 全新生成或編修行程
  */
 async function generateItineraryWithAI() {
     const destInput = document.getElementById('gen-destination');
     const daysInput = document.getElementById('gen-days');
     const draftInput = document.getElementById('gen-draft');
-    const themeSelect = document.getElementById('gen-theme');
-    const userApiKeyInput = document.getElementById('gen-user-api-key');
 
     const destination = destInput ? destInput.value.trim() : '';
     const days = daysInput ? daysInput.value.trim() : '';
@@ -156,9 +88,7 @@ async function generateItineraryWithAI() {
         return;
     }
 
-    // 取得 Google OAuth AccessToken
     const token = voyaAuth.getAccessToken();
-
     if (!token) {
         voyaDrive.showToast('請先登入 Google 帳號以使用 AI 規劃功能！', 'error');
         return;
@@ -167,7 +97,6 @@ async function generateItineraryWithAI() {
     setGenLoadingState(true);
 
     try {
-        // 呼叫 voyaPrompts 建立 System Instruction 與 User Prompt (預設自動主題)
         const systemInstruction = voyaPrompts.buildSystemInstruction('auto');
         const userPrompt = voyaPrompts.buildUserPrompt({
             destination,
@@ -176,7 +105,6 @@ async function generateItineraryWithAI() {
             currentEditSourceData
         });
 
-        // 呼叫 Generative Language API
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`;
         const requestHeaders = {
             'Content-Type': 'application/json',
@@ -197,8 +125,7 @@ async function generateItineraryWithAI() {
                 }
             ],
             generationConfig: {
-                temperature: 0.7,
-                response_mime_type: "application/json"
+                temperature: 0.7
             }
         };
 
@@ -217,20 +144,17 @@ async function generateItineraryWithAI() {
         const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!rawText) {
-            throw new Error('Gemini 未回傳有效的文字內容');
+            throw new Error('Gemini 未回傳有效的內容');
         }
 
-        // 解析 JSON 並實施結構歸一化
-        const parsedJson = cleanAndParseJson(rawText);
-        const generatedItinerary = normalizeItinerarySchema(parsedJson);
+        const parsed = cleanAndParseContent(rawText);
+        const generatedItinerary = normalizeItinerarySchema(parsed);
 
-        voyaDrive.showToast('✨ AI 旅遊助理規劃完成！正在儲存至 Google Drive...', 'success');
+        voyaDrive.showToast('✨ AI 行程規劃完成！正在儲存至 Google Drive...', 'success');
 
-        // 自動寫入或更新至 Google Drive (若已登入)
         let savedDirectUrl = null;
         if (voyaAuth.isLoggedIn()) {
             try {
-                // 若為微調模式，優先使用原始標題作為檔名，實現原地覆蓋 (不重複建立多餘檔案)
                 const targetTitle = (currentEditSourceData && currentEditSourceData.meta && currentEditSourceData.meta.title)
                     ? currentEditSourceData.meta.title
                     : (generatedItinerary.meta ? generatedItinerary.meta.title : 'itinerary');
@@ -242,12 +166,10 @@ async function generateItineraryWithAI() {
             }
         }
 
-        // 立即渲染最新生成的行程至 DOM
         if (typeof window.renderItineraryData === 'function') {
             window.renderItineraryData(generatedItinerary);
         }
 
-        // 切換至行程預覽頁面
         if (savedDirectUrl) {
             window.location.hash = `#viewer?data=${encodeURIComponent(savedDirectUrl)}`;
         } else {
@@ -262,6 +184,186 @@ async function generateItineraryWithAI() {
         voyaDrive.showToast(`生成失敗: ${err.message}`, 'error');
     } finally {
         setGenLoadingState(false);
+    }
+}
+
+/**
+ * 封裝呼叫 Gemini API 並具備 503/429 自動重試 (Retry with Backoff) 的請求工具
+ */
+async function fetchGeminiWithRetry(apiUrl, requestHeaders, requestBody, statusEl = null, maxRetries = 2) {
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (attempt > 0) {
+            const delayMs = attempt * 2500;
+            if (statusEl) statusEl.innerText = `伺服器忙碌中，${delayMs / 1000} 秒後自動重試 (${attempt}/${maxRetries})...`;
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify(requestBody)
+        });
+
+        if (res.ok) {
+            const resData = await res.json();
+            const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawText) throw new Error('Gemini 未回傳有效的內容');
+            return rawText;
+        }
+
+        const errText = await res.text();
+        lastError = new Error(`Gemini API 錯誤 (${res.status}): ${errText}`);
+
+        // 僅針對 503 (High Demand) 與 429 (Rate Limit) 進行自動重試
+        if (res.status !== 503 && res.status !== 429) {
+            throw lastError;
+        }
+    }
+
+    throw lastError;
+}
+async function chatModifyWithAI(userInstruction) {
+    if (!userInstruction || !userInstruction.trim()) return;
+
+    const token = voyaAuth.getAccessToken();
+    if (!token) {
+        voyaDrive.showToast('請先登入 Google 帳號才能使用 AI 對話助理！', 'error');
+        return;
+    }
+
+    const currentData = (typeof window.getItineraryData === 'function') ? window.getItineraryData() : null;
+    if (!currentData) {
+        voyaDrive.showToast('無法取得目前行程資料！', 'error');
+        return;
+    }
+
+    const sendBtn = document.getElementById('ai-chat-send-btn');
+    const statusText = document.getElementById('ai-chat-status');
+    const chatLog = document.getElementById('ai-chat-log');
+    const inputArea = document.getElementById('ai-chat-input');
+
+    if (sendBtn) sendBtn.disabled = true;
+    if (statusText) statusText.innerText = 'AI 思考與調整中...';
+
+    // 1. 將使用者訊息加入 Chat Log DOM
+    if (chatLog) {
+        const userMsgEl = document.createElement('div');
+        userMsgEl.className = 'chat-msg user bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl px-4 py-3 text-sm shadow-md ml-8 self-end leading-relaxed border border-slate-700/80 animate-fade-in';
+        userMsgEl.innerText = userInstruction;
+        chatLog.appendChild(userMsgEl);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // 2. 備份當前狀態至 UndoStack
+    if (window.voyaUndoStack && typeof window.voyaUndoStack.push === 'function') {
+        window.voyaUndoStack.push(currentData);
+    }
+
+    try {
+        const systemInstruction = voyaPrompts.buildChatSystemInstruction();
+        const userPrompt = voyaPrompts.buildChatUserPrompt({
+            currentItineraryData: currentData,
+            userInstruction
+        });
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`;
+        const requestHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        const clientId = (typeof VOYA_CONFIG !== 'undefined') ? VOYA_CONFIG.DEFAULT_CLIENT_ID : '';
+        const projectIdMatch = clientId.match(/^(\d+)-/);
+        if (projectIdMatch) {
+            requestHeaders['x-goog-user-project'] = projectIdMatch[1];
+        }
+
+        const requestBody = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: `${systemInstruction}\n\n${userPrompt}` }]
+                }
+            ],
+            generationConfig: {
+                temperature: 0.5
+            }
+        };
+
+        const rawText = await fetchGeminiWithRetry(apiUrl, requestHeaders, requestBody, statusText, 2);
+        const parsed = cleanAndParseContent(rawText);
+
+        // 3. Smart Merge 區塊替換邏輯
+        const updatedData = JSON.parse(JSON.stringify(currentData));
+
+        if (parsed.meta) {
+            updatedData.meta = Object.assign({}, updatedData.meta, parsed.meta);
+        }
+
+        const updatedDays = parsed.updated_days || parsed.days;
+        if (Array.isArray(updatedDays) && updatedDays.length > 0) {
+            updatedDays.forEach(newDay => {
+                const idx = updatedData.days.findIndex(d => d.day_number === newDay.day_number);
+                if (idx !== -1) {
+                    updatedData.days[idx] = newDay;
+                } else {
+                    updatedData.days.push(newDay);
+                }
+            });
+            updatedData.days.sort((a, b) => a.day_number - b.day_number);
+        }
+
+        updatedData.meta.last_updated = new Date().toISOString().split('T')[0];
+
+        // 4. 重新渲染畫面
+        if (typeof window.renderItineraryData === 'function') {
+            window.renderItineraryData(updatedData);
+        }
+
+        // 5. 將 AI 回應訊息加入 Chat Log DOM
+        const summaryText = parsed.summary || '已成功為您更新行程！';
+        if (chatLog) {
+            const aiMsgEl = document.createElement('div');
+            aiMsgEl.className = 'chat-msg ai bg-white border border-slate-200/80 rounded-2xl p-4 text-sm text-slate-700 shadow-sm mr-6 leading-relaxed animate-fade-in';
+            aiMsgEl.innerHTML = `
+                <div class="flex items-center gap-1.5 font-bold text-sky-600 mb-1">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>AI 修改完成</span>
+                </div>
+                <div>${summaryText}</div>
+            `;
+            chatLog.appendChild(aiMsgEl);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        if (inputArea) inputArea.value = '';
+        voyaDrive.showToast(`✨ ${summaryText}`, 'success');
+
+        // 6. 同步覆蓋儲存至 Google Drive (在背景執行)
+        if (voyaAuth.isLoggedIn() && window.currentLoadedFileId) {
+            voyaDrive.saveItineraryToDrive(
+                updatedData.meta.title || 'itinerary',
+                updatedData,
+                window.currentLoadedFileId
+            ).catch(err => console.warn('背景同步至 Drive 失敗:', err));
+        }
+
+    } catch (err) {
+        console.error('AI 對話微調失敗:', err);
+        voyaDrive.showToast(`微調失敗: ${err.message}`, 'error');
+
+        if (chatLog) {
+            const errMsgEl = document.createElement('div');
+            errMsgEl.className = 'chat-msg error bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl p-4 text-sm shadow-sm mr-6 animate-fade-in';
+            errMsgEl.innerText = `抱歉，修改時發生錯誤：${err.message}`;
+            chatLog.appendChild(errMsgEl);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+    } finally {
+        if (sendBtn) sendBtn.disabled = false;
+        if (statusText) statusText.innerText = '就緒';
     }
 }
 
@@ -287,5 +389,6 @@ function setGenLoadingState(isLoading) {
 // 暴露全域 API
 window.voyaGenerator = {
     initGeneratorView,
-    generateItineraryWithAI
+    generateItineraryWithAI,
+    chatModifyWithAI
 };

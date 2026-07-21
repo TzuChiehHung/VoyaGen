@@ -122,7 +122,14 @@ async function saveItineraryToDrive(fileNameOrData, itineraryDataParam = null, e
     }
 
     const folderId = await getOrCreateAppFolder();
-    const safeFileName = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
+    const safeFileName = (fileName.endsWith('.yaml') || fileName.endsWith('.yml') || fileName.endsWith('.json'))
+        ? fileName
+        : `${fileName}.yaml`;
+
+    const isYaml = safeFileName.endsWith('.yaml') || safeFileName.endsWith('.yml');
+    const contentText = (typeof itineraryData === 'string')
+        ? itineraryData
+        : (window.voyaYaml ? window.voyaYaml.dumpYaml(itineraryData) : JSON.stringify(itineraryData, null, 2));
 
     // 檢查是否已有相同檔名的檔案
     let targetFileId = existingFileId;
@@ -145,7 +152,7 @@ async function saveItineraryToDrive(fileNameOrData, itineraryDataParam = null, e
 
     const metadata = {
         name: safeFileName,
-        mimeType: 'application/json'
+        mimeType: isYaml ? 'text/yaml' : 'application/json'
     };
     if (!targetFileId) {
         metadata.parents = [folderId];
@@ -156,8 +163,8 @@ async function saveItineraryToDrive(fileNameOrData, itineraryDataParam = null, e
         'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
         JSON.stringify(metadata) +
         delimiter +
-        'Content-Type: application/json\r\n\r\n' +
-        (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData, null, 2)) +
+        `Content-Type: ${isYaml ? 'text/yaml' : 'application/json'}; charset=UTF-8\r\n\r\n` +
+        contentText +
         close_delim;
 
     let uploadUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
@@ -276,20 +283,20 @@ async function renderDashboard() {
                     </div>
 
                     <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-1.5 flex-wrap">
-                        <a href="${shareUrl}" class="flex-grow bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-2.5 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1 shadow-sm">
+                        <a href="${shareUrl}" class="flex-grow bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-2.5 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1 shadow-sm h-8">
                             <i class="fa-solid fa-eye text-[10px]"></i> 檢視
                         </a>
-                        <button onclick="voyaDrive.exportPdfFromDashboard('${file.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm animate-fade-in" title="匯出 PDF">
-                            <i class="fa-solid fa-file-pdf text-[12px]"></i>
+                        <button onclick="voyaDrive.downloadJsonFromDashboard('${file.id}', '${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm animate-fade-in" data-tooltip="下載 YAML">
+                            <i class="fa-solid fa-file-code"></i>
                         </button>
-                        <button onclick="voyaDrive.downloadJsonFromDashboard('${file.id}', '${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/80 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm animate-fade-in" title="下載 JSON">
-                            <i class="fa-solid fa-file-code text-[12px]"></i>
+                        <button onclick="voyaDrive.exportPdfFromDashboard('${file.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm animate-fade-in" data-tooltip="匯出 PDF">
+                            <i class="fa-solid fa-file-pdf"></i>
                         </button>
-                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); voyaDrive.showToast('已複製分享網址！', 'success');" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm" title="複製分享連結">
-                            <i class="fa-solid fa-share-nodes text-[12px]"></i>
+                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); voyaDrive.showToast('已複製分享網址！', 'success');" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm" data-tooltip="複製分享連結">
+                            <i class="fa-solid fa-share-nodes"></i>
                         </button>
-                        <button onclick="if(confirm('確定要將此行程移至垃圾桶嗎？')) voyaDrive.deleteItineraryFromDrive('${file.id}')" class="text-slate-400 hover:text-rose-500 p-2 transition-colors" title="刪除行程">
-                            <i class="fa-solid fa-trash-can text-[12px]"></i>
+                        <button onclick="if(confirm('確定要將此行程移至垃圾桶嗎？')) voyaDrive.deleteItineraryFromDrive('${file.id}')" class="bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm" data-tooltip="刪除行程">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 </div>
@@ -406,7 +413,7 @@ function showToast(message, type = 'info', duration = 3000) {
     return toast;
 }
 
-// 6. 選擇並批次上傳多個本地 JSON 檔案至 Google Drive
+// 6. 選擇並批次上傳多個本地 YAML / JSON 檔案至 Google Drive
 async function uploadLocalJsonFile(fileInput) {
     if (!fileInput.files || fileInput.files.length === 0) return;
     const files = Array.from(fileInput.files);
@@ -417,7 +424,9 @@ async function uploadLocalJsonFile(fileInput) {
 
     for (let i = 0; i < total; i++) {
         const file = files[i];
-        const fileName = file.name.endsWith('.json') ? file.name : `${file.name}.json`;
+        const fileName = (file.name.endsWith('.yaml') || file.name.endsWith('.yml') || file.name.endsWith('.json')) 
+            ? file.name 
+            : `${file.name}.yaml`;
 
         if (progressToast) {
             progressToast.querySelector('span').innerText = `[${i + 1}/${total}] 上傳中：${fileName}...`;
@@ -425,8 +434,8 @@ async function uploadLocalJsonFile(fileInput) {
 
         try {
             const text = await file.text();
-            const json = JSON.parse(text);
-            await saveItineraryToDrive(fileName, json);
+            const data = window.voyaYaml ? window.voyaYaml.parseYamlOrJson(text) : JSON.parse(text);
+            await saveItineraryToDrive(fileName, data);
             successCount++;
         } catch (err) {
             console.error(`上傳 ${fileName} 失敗:`, err);
@@ -444,9 +453,9 @@ async function uploadLocalJsonFile(fileInput) {
     fileInput.value = ''; // 清空 input 方便重複選擇
 }
 
-// 下載單個 JSON 檔案至本地
+// 下載單個行程檔案至本地 (匯出 YAML)
 async function downloadJsonFromDashboard(fileId, fileName) {
-    const toast = showToast('正在下載行程 JSON 檔案...', 'info', 0);
+    const toast = showToast('正在下載行程 YAML 檔案...', 'info', 0);
     try {
         const token = voyaAuth.getAccessToken();
         if (!token) throw new Error('請先登入 Google 帳號！');
@@ -455,21 +464,24 @@ async function downloadJsonFromDashboard(fileId, fileName) {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error(`下載失敗: ${res.status}`);
-        const data = await res.json();
+        const rawText = await res.text();
+        const data = window.voyaYaml ? window.voyaYaml.parseYamlOrJson(rawText) : JSON.parse(rawText);
+        const yamlStr = window.voyaYaml ? window.voyaYaml.dumpYaml(data) : JSON.stringify(data, null, 2);
 
         // 觸發瀏覽器下載
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const blob = new Blob([yamlStr], { type: 'text/yaml;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
+        const cleanName = fileName.replace(/\.(json|yaml|yml)$/i, '');
+        a.download = `${cleanName}.yaml`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
         toast.remove();
-        showToast('🎉 行程 JSON 檔案下載成功！', 'success');
+        showToast('🎉 行程 YAML 檔案下載成功！', 'success');
     } catch (err) {
         toast.remove();
         console.error(err);
