@@ -61,13 +61,59 @@ function initGeneratorView(sourceData = null) {
         // 全新生成模式
         if (modeBadge) modeBadge.innerText = '✦ AI 專屬規劃 ✦';
         if (modeTitle) modeTitle.innerText = '規劃您的夢幻旅程';
-        if (modeDesc) modeDesc.innerText = '填寫目的地與偏好，Gemini 3.5 Flash 將秒級為您規劃完美行程';
+        if (modeDesc) modeDesc.innerText = '填寫目的地與偏好，AI 旅遊規劃師將為您規劃完美行程';
         if (submitBtnText) submitBtnText.innerText = '開始 AI 智慧生成';
+
+        const startDateInput = document.getElementById('gen-start-date');
+        const endDateInput = document.getElementById('gen-end-date');
 
         if (destInput) destInput.value = '';
         if (daysInput) daysInput.value = '';
+        if (startDateInput) startDateInput.value = '';
+        if (endDateInput) endDateInput.value = '';
         if (themeSelect) themeSelect.value = 'auto';
         if (draftInput) draftInput.value = '';
+    }
+}
+
+/**
+ * 當使用者選擇日曆出發或結束日期時，自動計算與同步預計天數
+ */
+function handleDateChange() {
+    const startEl = document.getElementById('gen-start-date');
+    const endEl = document.getElementById('gen-end-date');
+    const daysEl = document.getElementById('gen-days');
+
+    if (startEl && endEl && startEl.value && endEl.value) {
+        const start = new Date(startEl.value);
+        const end = new Date(endEl.value);
+        if (end >= start) {
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (daysEl) daysEl.value = diffDays;
+        }
+    }
+}
+
+/**
+ * 當使用者輸入或修改天數時，若已有出發日期，自動計算結束日期
+ */
+function handleDaysChange() {
+    const startEl = document.getElementById('gen-start-date');
+    const endEl = document.getElementById('gen-end-date');
+    const daysEl = document.getElementById('gen-days');
+
+    if (startEl && daysEl && startEl.value && daysEl.value) {
+        const days = parseInt(daysEl.value, 10);
+        if (days > 0) {
+            const start = new Date(startEl.value);
+            const end = new Date(start);
+            end.setDate(start.getDate() + days - 1);
+            const yyyy = end.getFullYear();
+            const mm = String(end.getMonth() + 1).padStart(2, '0');
+            const dd = String(end.getDate()).padStart(2, '0');
+            if (endEl) endEl.value = `${yyyy}-${mm}-${dd}`;
+        }
     }
 }
 
@@ -77,11 +123,24 @@ function initGeneratorView(sourceData = null) {
 async function generateItineraryWithAI() {
     const destInput = document.getElementById('gen-destination');
     const daysInput = document.getElementById('gen-days');
+    const startDateInput = document.getElementById('gen-start-date');
+    const endDateInput = document.getElementById('gen-end-date');
     const draftInput = document.getElementById('gen-draft');
 
     const destination = destInput ? destInput.value.trim() : '';
     const days = daysInput ? daysInput.value.trim() : '';
+    const startDate = startDateInput ? startDateInput.value : '';
+    const endDate = endDateInput ? endDateInput.value : '';
     const draft = draftInput ? draftInput.value.trim() : '';
+
+    let dateRange = '';
+    if (startDate && endDate) {
+        const s = new Date(startDate);
+        const e = new Date(endDate);
+        if (e >= s) {
+            dateRange = `${s.getFullYear()}/${s.getMonth() + 1}/${s.getDate()} - ${e.getFullYear()}/${e.getMonth() + 1}/${e.getDate()}`;
+        }
+    }
 
     if (!destination && !draft) {
         voyaDrive.showToast('請輸入旅遊目的地或行程文字草稿！', 'error');
@@ -101,6 +160,7 @@ async function generateItineraryWithAI() {
         const userPrompt = voyaPrompts.buildUserPrompt({
             destination,
             days,
+            dateRange,
             draft,
             currentEditSourceData
         });
@@ -150,7 +210,7 @@ async function generateItineraryWithAI() {
         const parsed = cleanAndParseContent(rawText);
         const generatedItinerary = normalizeItinerarySchema(parsed);
 
-        voyaDrive.showToast('✨ AI 行程規劃完成！正在儲存至 Google Drive...', 'success');
+        voyaDrive.showToast('✨ AI 旅遊規劃師已完成行程！正在儲存至 Google Drive...', 'success');
 
         let savedDirectUrl = null;
         if (voyaAuth.isLoggedIn()) {
@@ -390,5 +450,7 @@ function setGenLoadingState(isLoading) {
 window.voyaGenerator = {
     initGeneratorView,
     generateItineraryWithAI,
-    chatModifyWithAI
+    chatModifyWithAI,
+    handleDateChange,
+    handleDaysChange
 };

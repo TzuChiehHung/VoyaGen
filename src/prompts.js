@@ -30,7 +30,7 @@ function buildSystemInstruction(theme = 'auto') {
 3. 🛤️ **行程時間軸類型與結構**：
    - 預設行程一律為【單線時間軸】。item type 可為：
      - milestone: 起終點/班機/入住/機場接駁等重要節點 (套用高亮區塊)。
-     - activity: 一般景點散策、美食餐廳體驗、購物等，必須附帶 2~3 條 bullets 特色亮點。
+     - activity: 一般景點漫步、美食餐廳體驗、購物等，必須附帶 2~3 條 bullets 特色亮點。
      - transfer: 交通移動過程 (如機場接駁、搭乘特急/計程車/地鐵)，提供時間與說明。
    - 僅當使用者在草稿中明確要求「自由選擇/分頭行動/雙軌」時，才可以為該項目使用 type: "split" 並提供 tracks 陣列。
 
@@ -60,7 +60,7 @@ days:
         description: "預約機場接駁，建議提前 2.5 小時抵達辦理登機手續"
       - type: "activity"
         time: "18:00 - 20:00"
-        title: "錦市場散策與晚餐 🍜"
+        title: "錦市場漫步與晚餐 🍜"
         bullets:
           - "漫步「京都廚房」錦市場，品嚐湯葉、醃漬物等在地小食"
           - "在四條周邊找一家居酒屋享用正式晚餐"
@@ -83,8 +83,9 @@ days:
  * @param {Object} options
  * @returns {string}
  */
-function buildUserPrompt({ destination, days, draft, currentEditSourceData }) {
+function buildUserPrompt({ destination, days, dateRange, draft, currentEditSourceData }) {
     const daysGuide = days ? `- 規劃天數：${days} 天` : '';
+    const dateRangeGuide = dateRange ? `- 指定日期區間：${dateRange}` : '';
 
     if (currentEditSourceData) {
         const sourceYaml = window.voyaYaml ? window.voyaYaml.dumpYaml(currentEditSourceData) : JSON.stringify(currentEditSourceData, null, 2);
@@ -100,6 +101,7 @@ ${sourceYaml}
         return `【全新行程規劃任務】
 - 旅遊目的地：${destination || '根據草稿規劃'}
 ${daysGuide}
+${dateRangeGuide}
 - 指定主題/細節草稿：${draft || '請安排最具代表性的熱門景點與美食體驗'}
 
 請生成一份專業、結構完整且符合規範的旅遊行程 YAML。`;

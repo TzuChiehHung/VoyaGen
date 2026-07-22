@@ -225,18 +225,31 @@ function switchDay(dayNum) {
     }
 
     const timeline = dayData.timeline || dayData.items || dayData.activities || [];
-    let timelineHtml = timeline.map(item => {
+    let timelineHtml = timeline.map((item, index) => {
         if (item.type === "split") {
             return renderSplitHtml(item);
         } else {
-            return renderItemHtml(item);
+            return renderItemHtml(item, '', dayNum, index);
         }
     }).join("");
 
+    if (window.voyaEditor && typeof window.voyaEditor.isEditMode === 'function' && window.voyaEditor.isEditMode()) {
+        timelineHtml += `
+            <div class="mt-8 pt-4 border-t border-dashed border-slate-200 text-center">
+                <button onclick="voyaEditor.addItem(${dayNum})" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 mx-auto cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    新增 Day ${dayNum} 行程景點
+                </button>
+            </div>
+        `;
+    }
+
     const dayHeaderHtml = `
-        <div class="mb-6 border-b pb-4 border-slate-100">
-            <div class="text-amber-600 font-bold text-base tracking-widest font-mono uppercase mb-1.5">${dayData.date_label || `Day ${dayNum}`}</div>
-            <h2 class="text-2xl font-black text-indigo-900 tracking-tight">${dayData.day_title}</h2>
+        <div class="mb-6 border-b pb-4 border-slate-100 flex items-center justify-between">
+            <div>
+                <div class="text-amber-600 font-bold text-base tracking-widest font-mono uppercase mb-1.5">${dayData.date_label || `Day ${dayNum}`}</div>
+                <h2 class="text-2xl font-black text-indigo-900 tracking-tight">${dayData.day_title || ''}</h2>
+            </div>
         </div>
     `;
 
@@ -272,6 +285,7 @@ function checkPermissionsAndToggleUI() {
     const isLogged = typeof voyaAuth !== 'undefined' && voyaAuth.isLoggedIn();
     const dataParam = getQueryParam('data') || '';
 
+    const btnEdit = document.getElementById('btn-toggle-edit-mode');
     const btnAi = document.getElementById('btn-ai-copilot-toggle');
     const sideHandle = document.getElementById('ai-drawer-side-handle');
     const btnUndo = document.getElementById('btn-undo-toolbar');
@@ -282,13 +296,15 @@ function checkPermissionsAndToggleUI() {
     const isTemplate = !dataParam || dataParam.includes('templates/itinerary');
 
     if (window.currentLoadedFileId && isLogged) {
-        // 使用者有登入且載入了自己的 Drive 檔案 -> 顯示 AI 與 Undo，隱藏複製
+        // 使用者有登入且載入了自己的 Drive 檔案 -> 顯示 編輯、AI 與 Undo，隱藏複製
+        if (btnEdit) btnEdit.classList.remove('hidden');
         if (btnAi) btnAi.classList.remove('hidden');
         if (sideHandle) sideHandle.classList.remove('hidden');
         if (btnUndo) btnUndo.classList.remove('hidden');
         if (btnCopy) btnCopy.classList.add('hidden');
     } else {
-        // 外部公開連結、預設範本或未登入 -> 隱藏 AI 與 Undo，顯示副本複製引導
+        // 外部公開連結、預設範本或未登入 -> 隱藏 編輯、AI 與 Undo，顯示副本複製引導
+        if (btnEdit) btnEdit.classList.add('hidden');
         if (btnAi) btnAi.classList.add('hidden');
         if (sideHandle) sideHandle.classList.add('hidden');
         if (btnUndo) btnUndo.classList.add('hidden');
@@ -546,12 +562,48 @@ window.renderItineraryData = (data) => {
     const sidebar = document.getElementById('day-sidebar');
     if (sidebar) {
         const daysList = itineraryData.days || [];
-        sidebar.innerHTML = daysList.map(day => `
-            <button onclick="switchDay(${day.day_number})" id="btn-day${day.day_number}" class="day-btn flex-shrink-0 text-left px-4 py-3 rounded-xl border border-slate-100 font-medium text-slate-600 hover:bg-slate-50 transition-all">
-                Day ${day.day_number}
-                <span class="block text-xs font-normal opacity-80 mt-0.5">${day.day_title || ''}</span>
-            </button>
-        `).join("");
+        const isEdit = (window.voyaEditor && typeof window.voyaEditor.isEditMode === 'function' && window.voyaEditor.isEditMode());
+
+        let sidebarHtml = daysList.map(day => {
+            const dayControls = isEdit ? `
+                <div class="flex items-center gap-1 ml-2 shrink-0">
+                    <span onclick="voyaEditor.moveDay(${day.day_number}, -1, event)" class="px-1.5 py-0.5 text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 rounded transition-colors text-[10px]" title="前移天數">
+                        <i class="fa-solid fa-chevron-left md:hidden"></i>
+                        <i class="fa-solid fa-chevron-up hidden md:inline"></i>
+                    </span>
+                    <span onclick="voyaEditor.moveDay(${day.day_number}, 1, event)" class="px-1.5 py-0.5 text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 rounded transition-colors text-[10px]" title="後移天數">
+                        <i class="fa-solid fa-chevron-right md:hidden"></i>
+                        <i class="fa-solid fa-chevron-down hidden md:inline"></i>
+                    </span>
+                    <span onclick="voyaEditor.deleteDay(${day.day_number}, event)" class="px-1.5 py-0.5 text-rose-400 hover:text-rose-600 hover:bg-rose-100/80 rounded transition-colors text-[10px]" title="刪除整天"><i class="fa-solid fa-trash-can"></i></span>
+                </div>
+            ` : '';
+
+            const dragAttrs = isEdit ? `draggable="true" ondragstart="voyaEditor.handleDayTabDragStart(event, ${day.day_number})" ondragend="voyaEditor.handleDayTabDragEnd(event)"` : '';
+
+            return `
+                <button onclick="switchDay(${day.day_number})" id="btn-day${day.day_number}" ${dragAttrs} ondragover="event.preventDefault(); this.classList.add('bg-amber-100', 'border-amber-400');" ondragleave="this.classList.remove('bg-amber-100', 'border-amber-400');" ondrop="this.classList.remove('bg-amber-100', 'border-amber-400'); voyaEditor.handleDayTabDrop(event, ${day.day_number}); voyaEditor.handleDropOnDay(event, ${day.day_number});" class="day-btn flex-shrink-0 text-left px-4 py-3 rounded-xl border border-slate-100 font-medium text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            Day ${day.day_number}
+                            <span class="block text-xs font-normal opacity-80 mt-0.5">${day.day_title || ''}</span>
+                        </div>
+                        ${dayControls}
+                    </div>
+                </button>
+            `;
+        }).join("");
+
+        if (isEdit) {
+            sidebarHtml += `
+                <button onclick="voyaEditor.addDay()" class="day-btn flex-shrink-0 text-center px-4 py-3 rounded-xl border border-dashed border-slate-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 font-bold transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    新增天數
+                </button>
+            `;
+        }
+
+        sidebar.innerHTML = sidebarHtml;
     }
 
     checkPermissionsAndToggleUI();

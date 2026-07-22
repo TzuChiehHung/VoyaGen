@@ -273,7 +273,7 @@ async function renderDashboard() {
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <input type="checkbox" class="dashboard-checkbox rounded border-slate-300 text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer shrink-0" data-file-id="${file.id}" onchange="voyaDrive.onCheckboxChange()">
-                                <h3 class="font-bold text-slate-800 text-base truncate" title="${file.name.replace('.json', '')}">${file.name.replace('.json', '')}</h3>
+                                <h3 class="font-bold text-slate-800 text-base truncate" title="${file.name.replace(/\.(json|yaml|yml)$/i, '')}">${file.name.replace(/\.(json|yaml|yml)$/i, '')}</h3>
                             </div>
                         </div>
                         <p class="text-xs text-slate-400 mb-4 flex items-center gap-1 pl-6">
@@ -283,8 +283,9 @@ async function renderDashboard() {
                     </div>
 
                     <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-1.5 flex-wrap">
-                        <a href="${shareUrl}" class="flex-grow bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-2.5 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1 shadow-sm h-8">
-                            <i class="fa-solid fa-eye text-[10px]"></i> 檢視
+                        <a href="${shareUrl}" class="flex-grow bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 text-xs font-extrabold px-2.5 py-2 rounded-xl text-center transition-all flex items-center justify-center gap-1.5 shadow-sm h-8">
+                            <i class="fa-solid fa-folder-open text-xs"></i>
+                            <span>開啟行程</span>
                         </a>
                         <button onclick="voyaDrive.downloadJsonFromDashboard('${file.id}', '${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm animate-fade-in" data-tooltip="下載 YAML">
                             <i class="fa-solid fa-file-code"></i>

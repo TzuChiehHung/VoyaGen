@@ -35,7 +35,7 @@ function navigateTo(routeName) {
     if (targetRoute === 'dashboard') {
         document.title = "VoyaGen - 我的行程庫";
     } else if (targetRoute === 'generator') {
-        document.title = "VoyaGen - AI 行程規劃";
+        document.title = "VoyaGen - AI 旅遊規劃師";
     } else if (targetRoute === 'login') {
         document.title = "VoyaGen - 歡迎使用";
     }

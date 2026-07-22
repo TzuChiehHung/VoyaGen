@@ -1,5 +1,5 @@
 // 渲染單個行程時間軸項目
-function renderItemHtml(item, colorTheme = '') {
+function renderItemHtml(item, colorTheme = '', dayNum = null, itemIdx = null) {
     let classes = "";
     let dotClass = "";
     const itemClass = (colorTheme && colorTheme !== 'amber')
@@ -45,7 +45,6 @@ function renderItemHtml(item, colorTheme = '') {
     const notes = item.notes || [];
     if (notes.length > 0) {
         notesHtml = notes.map(note => {
-            // 所有 note 全部跟隨主題色：主 timeline 用 CSS 變數，split track 用 note-box-{colorTheme}
             const noteClass = (colorTheme && colorTheme !== 'amber') ? `note-box-${colorTheme}` : "";
             const iconClass = note.icon || "fa-solid fa-lightbulb";
             const iconStyle = !noteClass ? `style="color: var(--color-accent-primary)"` : "";
@@ -62,10 +61,38 @@ function renderItemHtml(item, colorTheme = '') {
         }).join("");
     }
     
-    // split track 內的 item 不加 timeline-item base class，避免 :last-child 詮則把有色指線覆蓋成透明
+    const isEdit = (window.voyaEditor && typeof window.voyaEditor.isEditMode === 'function' && window.voyaEditor.isEditMode() && dayNum !== null && itemIdx !== null);
+
+    let editBarHtml = "";
+    if (isEdit) {
+        const days = (typeof window.getItineraryData === 'function' && window.getItineraryData()?.days) ? window.getItineraryData().days : [];
+        const dayOptions = days.map(d => `<option value="${d.day_number}" ${d.day_number === dayNum ? 'disabled' : ''}>Day ${d.day_number}</option>`).join('');
+
+        editBarHtml = `
+            <div class="edit-action-bar bg-amber-500 text-white rounded-lg px-2.5 py-1 mb-2.5 flex items-center justify-between text-xs shadow-sm">
+                <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-[11px] opacity-90 cursor-grab"><i class="fa-solid fa-grip-vertical"></i> 拖曳</span>
+                    <button onclick="voyaEditor.openItemEditModal(${dayNum}, ${itemIdx})" class="hover:bg-amber-600 px-2 py-0.5 rounded transition-colors font-bold flex items-center gap-1" title="編輯細節"><i class="fa-solid fa-pen"></i> 編輯</button>
+                    <button onclick="voyaEditor.moveItem(${dayNum}, ${itemIdx}, -1)" class="hover:bg-amber-600 px-1.5 py-0.5 rounded transition-colors" title="上移"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button onclick="voyaEditor.moveItem(${dayNum}, ${itemIdx}, 1)" class="hover:bg-amber-600 px-1.5 py-0.5 rounded transition-colors" title="下移"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <select onchange="if(this.value){ voyaEditor.moveItemToDay(${dayNum}, ${itemIdx}, this.value); }" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] rounded px-1.5 py-0.5 border-none outline-none font-bold cursor-pointer">
+                        <option value="">🚚 移至天數...</option>
+                        ${dayOptions}
+                    </select>
+                    <button onclick="voyaEditor.deleteItem(${dayNum}, ${itemIdx})" class="hover:bg-rose-600 px-2 py-0.5 rounded transition-colors text-white font-bold" title="刪除"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+        `;
+    }
+
     const baseClass = (colorTheme && colorTheme !== 'amber') ? '' : 'timeline-item';
+    const dragAttrs = isEdit ? `draggable="true" ondragstart="voyaEditor.handleDragStart(event, ${dayNum}, ${itemIdx})" ondragend="voyaEditor.handleDragEnd(event)" ondragover="voyaEditor.handleItemDragOver(event)" ondragleave="voyaEditor.handleItemDragLeave(event)" ondrop="voyaEditor.handleItemDropOnItem(event, ${dayNum}, ${itemIdx})"` : '';
+
     return `
-        <div class="${[baseClass, classes].filter(Boolean).join(' ')}">
+        <div class="${[baseClass, classes].filter(Boolean).join(' ')}" ${dragAttrs}>
+            ${editBarHtml}
             <div class="${dotClass}"></div>
             <div class="text-amber-600 font-bold text-sm mb-1 tracking-wider font-mono">${item.time || ''}</div>
             <h3 class="text-lg font-bold text-slate-800 mb-1 leading-snug">

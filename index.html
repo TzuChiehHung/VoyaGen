@@ -42,7 +42,7 @@
                 </button>
                 <button onclick="navigateTo('generator')" data-route="generator" class="nav-link px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-route text-slate-700"></i>
-                    <span class="hidden sm:inline">AI 行程規劃</span>
+                    <span class="hidden sm:inline">AI 旅遊規劃師</span>
                 </button>
                 <div class="relative">
                     <button id="user-menu-btn" onclick="voyaAuth.handleUserButtonClick()" class="w-9 h-9 rounded-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-700 font-semibold transition-all flex items-center justify-center border border-slate-200/80 shadow-sm text-sm" title="使用者選單">
@@ -136,25 +136,40 @@
             <div class="mb-8 text-center max-w-xl mx-auto space-y-4">
                 <span id="gen-mode-badge" class="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80 text-xs font-bold tracking-wider">✦ AI 專屬規劃 ✦</span>
                 <h2 id="gen-mode-title" class="text-2xl font-black text-slate-900 tracking-tight">規劃您的夢幻旅程</h2>
-                <p id="gen-mode-desc" class="text-sm text-slate-500 leading-relaxed max-w-lg mx-auto">填寫目的地與偏好，Gemini 3.5 Flash 將秒級為您規劃完美行程</p>
+                <p id="gen-mode-desc" class="text-sm text-slate-500 leading-relaxed max-w-lg mx-auto">填寫目的地與偏好，AI 旅遊規劃師將為您規劃完美行程</p>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-100 shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
                 <form onsubmit="event.preventDefault(); voyaGenerator.generateItineraryWithAI();" class="space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-2">
+                    <div class="space-y-4">
+                        <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">旅遊目的地 / 標題</label>
                             <input type="text" id="gen-destination" placeholder="例如：2026 日本京都大阪 5天4夜深度之旅" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm font-medium">
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1.5">預計天數 <span class="text-slate-400 font-normal lowercase text-xs">(選填)</span></label>
-                            <input type="number" id="gen-days" min="1" max="30" placeholder="預設由 AI 判斷" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm font-medium">
+
+                        <!-- 預計天數與日曆選擇組合區塊 (可輸入天數或用日曆選起止時間) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">預計天數 <span class="text-slate-400 font-normal lowercase">(選填)</span></label>
+                                <div class="relative">
+                                    <input type="number" id="gen-days" min="1" max="30" oninput="voyaGenerator.handleDaysChange()" placeholder="天數 (例: 5)" class="w-full pl-3 pr-7 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-medium bg-white">
+                                    <span class="absolute right-2.5 top-2 text-xs text-slate-400 font-bold pointer-events-none">天</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-regular fa-calendar text-sky-600 mr-1"></i>出發日期 <span class="text-slate-400 font-normal lowercase">(選填)</span></label>
+                                <input type="date" id="gen-start-date" onchange="voyaGenerator.handleDateChange()" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-medium bg-white text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-regular fa-calendar-check text-sky-600 mr-1"></i>結束日期 <span class="text-slate-400 font-normal lowercase">(選填)</span></label>
+                                <input type="date" id="gen-end-date" onchange="voyaGenerator.handleDateChange()" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs font-medium bg-white text-slate-700">
+                            </div>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1.5">行程偏好 / 景點草稿 / AI 需求</label>
-                        <textarea id="gen-draft" rows="15" placeholder="例如：想去道頓堀吃章魚燒與大阪燒、黑門市場、心誕橋購物，並安排一天前往京都清水寺與嵐山散策..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm min-h-[180px]"></textarea>
+                        <textarea id="gen-draft" rows="15" placeholder="例如：想去道頓堀吃章魚燒與大阪燒、黑門市場、心齋橋購物，並安排一天前往京都清水寺與嵐山漫步..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm min-h-[180px]"></textarea>
                     </div>
 
                     <button type="submit" id="gen-submit-btn" class="w-full bg-gradient-to-r from-blue-600 via-sky-600 to-teal-500 hover:opacity-95 text-white font-bold py-4 rounded-xl shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 text-base">
@@ -254,6 +269,11 @@
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </button>
 
+                                <!-- 3. 手動編輯模式切換按鈕 (權限限定，位於 AI 助理右側) -->
+                                <button id="btn-toggle-edit-mode" onclick="voyaEditor.toggleEditMode()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm" data-tooltip="手動編輯模式">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+
                                 <!-- 3. 複製到我的雲端硬碟按鈕 (非擁有者/他人連結時顯示) -->
                                 <button id="btn-copy-to-drive-toolbar" onclick="voyaRender.copyCurrentItineraryToMyDrive()" class="hidden bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 w-8 h-8 rounded-xl transition-all flex items-center justify-center text-xs shadow-sm" data-tooltip="複製到我的雲端硬碟">
                                     <i class="fa-solid fa-copy"></i>
@@ -349,6 +369,88 @@
     <!-- Hidden Print Area -->
     <div id="print-all-days-area" class="hidden print:block"></div>
 
+    <!-- 行程項目編輯 Modal (Item Edit Modal) -->
+    <div id="item-edit-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-100">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-sky-400"></i>
+                    編輯行程景點項目
+                </h3>
+                <button onclick="voyaEditor.closeItemEditModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (可滾動區域) -->
+            <div class="p-6 overflow-y-auto space-y-4 text-xs">
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">時間 (Time)</label>
+                        <input type="text" id="modal-edit-time" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="14:00">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block font-bold text-slate-700 mb-1">景點/項目名稱 (Title)</label>
+                        <input type="text" id="modal-edit-title" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-bold focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="清水寺與二年坂">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">項目類型 (Type)</label>
+                        <select id="modal-edit-type" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="activity">一般活動 (Activity)</option>
+                            <option value="milestone">核心亮點 (Milestone)</option>
+                            <option value="transfer">交通移動 (Transfer)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block font-bold text-slate-700 mb-1">Google Maps 連結 (Map Link)</label>
+                        <input type="text" id="modal-edit-maplink" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://maps.google.com/?query=清水寺">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">簡介與描述 (Description)</label>
+                    <textarea id="modal-edit-desc" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="輸入詳細景點說明、歷史背景或活動介紹..."></textarea>
+                </div>
+
+                <!-- Bullets 列表 -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="font-bold text-slate-700">重點提醒條列 (Bullets)</label>
+                        <button type="button" onclick="voyaEditor.addBulletInputRow(document.getElementById('modal-edit-bullets-container'))" class="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 text-xs">
+                            <i class="fa-solid fa-plus"></i> 新增提醒
+                        </button>
+                    </div>
+                    <div id="modal-edit-bullets-container"></div>
+                </div>
+
+                <!-- Notes 卡片列表 -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="font-bold text-slate-700">貼心提醒卡片 (Notes)</label>
+                        <button type="button" onclick="voyaEditor.addNoteInputRow(document.getElementById('modal-edit-notes-container'))" class="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 text-xs">
+                            <i class="fa-solid fa-plus"></i> 新增卡片
+                        </button>
+                    </div>
+                    <div id="modal-edit-notes-container"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
+                <button onclick="voyaEditor.closeItemEditModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 font-bold text-xs">
+                    取消
+                </button>
+                <button onclick="voyaEditor.saveItemModal()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md">
+                    儲存修改
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Core Scripts -->
     <script src="src/config.js"></script>
     <script src="src/url-parser.js"></script>
@@ -360,5 +462,6 @@
     <script src="src/router.js"></script>
     <script src="src/templates.js"></script>
     <script src="src/render.js"></script>
+    <script src="src/editor.js"></script>
 </body>
 </html>
