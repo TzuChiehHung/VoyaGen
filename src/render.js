@@ -560,6 +560,36 @@ window.renderItineraryData = (data) => {
     switchDay(startDay);
 };
 
+// 查詢並於 Console 列出所有目前專案可調用的 Gemini 模型
+async function logAvailableModels() {
+    const isLogged = typeof voyaAuth !== 'undefined' && voyaAuth.isLoggedIn();
+    if (!isLogged) return;
+    const token = voyaAuth.getAccessToken();
+    if (!token) return;
+
+    try {
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
+        const requestHeaders = {
+            'Authorization': `Bearer ${token}`
+        };
+        const clientId = (typeof VOYA_CONFIG !== 'undefined') ? VOYA_CONFIG.DEFAULT_CLIENT_ID : '';
+        const projectIdMatch = clientId.match(/^(\d+)-/);
+        if (projectIdMatch) {
+            requestHeaders['x-goog-user-project'] = projectIdMatch[1];
+        }
+
+        const res = await fetch(apiUrl, { headers: requestHeaders });
+        if (res.ok) {
+            const data = await res.json();
+            console.log('🤖 [VoyaGen] 偵測到可調用的 Gemini 模型列表:', data.models || data);
+        } else {
+            console.warn(`🤖 [VoyaGen] 無法獲取 Gemini 模型列表 (${res.status}):`, await res.text());
+        }
+    } catch (err) {
+        console.error('🤖 [VoyaGen] 獲取 Gemini 模型列表出錯:', err);
+    }
+}
+
 // 切換 AI 助理對話側邊欄 (Drawer)
 function toggleAiDrawer(show = null) {
     const drawer = document.getElementById('ai-drawer');
@@ -574,6 +604,9 @@ function toggleAiDrawer(show = null) {
         drawer.classList.remove('translate-x-full');
         if (handleIcon) handleIcon.className = 'fa-solid fa-chevron-right text-slate-500 text-xs';
         if (sideHandle) sideHandle.setAttribute('data-tooltip-left', '收折對話框');
+
+        // 異步列出可用模型至 console log
+        logAvailableModels();
     } else {
         drawer.classList.add('translate-x-full');
         if (handleIcon) handleIcon.className = 'fa-solid fa-wand-magic-sparkles text-sky-600 text-sm';

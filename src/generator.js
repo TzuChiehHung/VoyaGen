@@ -105,7 +105,7 @@ async function generateItineraryWithAI() {
             currentEditSourceData
         });
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`;
         const requestHeaders = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -268,7 +268,7 @@ async function chatModifyWithAI(userInstruction) {
             userInstruction
         });
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`;
         const requestHeaders = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
